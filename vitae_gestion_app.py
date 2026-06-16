@@ -1,0 +1,943 @@
+# vitae_gestion_app.py
+# Ejecutar en VS Code / terminal:
+#   pip install streamlit pandas plotly openpyxl
+#   streamlit run vitae_gestion_app.py
+
+from __future__ import annotations
+
+import sqlite3
+from pathlib import Path
+from datetime import date, datetime, timedelta
+from typing import Any, Dict, List, Tuple
+
+import pandas as pd
+import plotly.express as px
+import streamlit as st
+
+# =========================================================
+# CONFIG GENERAL
+# =========================================================
+
+APP_TITLE = "VITAE | Sistema Integral de Gestión"
+DB_PATH = Path("vitae_gestion.db")
+DATE_FMT = "%Y-%m-%d"
+
+st.set_page_config(
+    page_title=APP_TITLE,
+    page_icon="🏥",
+    layout="wide",
+    initial_sidebar_state="expanded",
+)
+
+st.markdown(
+    """
+    <style>
+    .main-title {
+        font-size: 2.1rem;
+        font-weight: 800;
+        margin-bottom: 0.1rem;
+    }
+    .subtitle {
+        color: #6b7280;
+        margin-bottom: 1.2rem;
+    }
+    div[data-testid="stMetricValue"] {
+        font-size: 1.35rem !important;
+    }
+    .small-muted {
+        color: #6b7280;
+        font-size: 0.88rem;
+    }
+    </style>
+    """,
+    unsafe_allow_html=True,
+)
+
+# =========================================================
+# DEFINICIÓN DE MÓDULOS
+# =========================================================
+# Cada módulo tiene:
+# - tabla: nombre interno sqlite
+# - empresa: VMR / VM / VITAE
+# - tipo: flujo, cuenta_corriente, facturacion, deuda, etc.
+# - campos: columnas editables por el usuario
+
+MODULES: Dict[str, Dict[str, Any]] = {
+    "Caja VMR": {
+        "table": "caja_vmr",
+        "empresa": "VMR",
+        "tipo": "flujo",
+        "descripcion": "Movimientos de efectivo de Vitae Medicina Reproductiva.",
+        "fields": [
+            ("fecha", "date", True),
+            ("concepto", "text", True),
+            ("categoria", "select", True, ["Ingreso", "Egreso", "Retiro", "Aporte", "Otro"]),
+            ("medio", "select", True, ["Efectivo", "Transferencia", "Tarjeta", "Cheque", "Otro"]),
+            ("ingreso", "money", False),
+            ("egreso", "money", False),
+            ("responsable", "text", False),
+            ("observaciones", "textarea", False),
+        ],
+    },
+    "Banco Macro VMR": {
+        "table": "banco_macro_vmr",
+        "empresa": "VMR",
+        "tipo": "flujo",
+        "descripcion": "Movimientos bancarios de Banco Macro pertenecientes a VMR.",
+        "fields": [
+            ("fecha", "date", True),
+            ("concepto", "text", True),
+            ("tipo_movimiento", "select", True, ["Crédito", "Débito", "Transferencia", "Débito automático", "Impuesto", "Otro"]),
+            ("referencia", "text", False),
+            ("ingreso", "money", False),
+            ("egreso", "money", False),
+            ("conciliado", "bool", False),
+            ("observaciones", "textarea", False),
+        ],
+    },
+    "Cuenta Corriente VMR": {
+        "table": "cuenta_corriente_vmr",
+        "empresa": "VMR",
+        "tipo": "cuenta_corriente",
+        "descripcion": "Cuentas por cobrar y pagar de VMR.",
+        "fields": [
+            ("fecha", "date", True),
+            ("persona_entidad", "text", True),
+            ("concepto", "text", True),
+            ("tipo", "select", True, ["A cobrar", "A pagar"]),
+            ("importe", "money", True),
+            ("pagado", "money", False),
+            ("vencimiento", "date", False),
+            ("estado", "select", True, ["Pendiente", "Parcial", "Pagado", "Vencido"]),
+            ("observaciones", "textarea", False),
+        ],
+    },
+    "Facturación VMR": {
+        "table": "facturacion_vmr",
+        "empresa": "VMR",
+        "tipo": "facturacion",
+        "descripcion": "Facturas emitidas, cobradas y pendientes de VMR.",
+        "fields": [
+            ("fecha", "date", True),
+            ("cliente", "text", True),
+            ("comprobante", "text", False),
+            ("concepto", "text", True),
+            ("importe", "money", True),
+            ("cobrado", "money", False),
+            ("fecha_cobro", "date", False),
+            ("estado", "select", True, ["Pendiente", "Parcial", "Cobrado", "Anulado"]),
+            ("observaciones", "textarea", False),
+        ],
+    },
+    "Caja VM": {
+        "table": "caja_vm",
+        "empresa": "VM",
+        "tipo": "flujo",
+        "descripcion": "Movimientos de efectivo de Vitae Medical.",
+        "fields": [
+            ("fecha", "date", True),
+            ("concepto", "text", True),
+            ("categoria", "select", True, ["Ingreso", "Egreso", "Retiro", "Aporte", "Otro"]),
+            ("medio", "select", True, ["Efectivo", "Transferencia", "Tarjeta", "Cheque", "Otro"]),
+            ("ingreso", "money", False),
+            ("egreso", "money", False),
+            ("responsable", "text", False),
+            ("observaciones", "textarea", False),
+        ],
+    },
+    "Banco Galicia VM": {
+        "table": "banco_galicia_vm",
+        "empresa": "VM",
+        "tipo": "flujo",
+        "descripcion": "Movimientos bancarios de Banco Galicia pertenecientes a VM.",
+        "fields": [
+            ("fecha", "date", True),
+            ("concepto", "text", True),
+            ("tipo_movimiento", "select", True, ["Crédito", "Débito", "Transferencia", "Débito automático", "Impuesto", "Otro"]),
+            ("referencia", "text", False),
+            ("ingreso", "money", False),
+            ("egreso", "money", False),
+            ("conciliado", "bool", False),
+            ("observaciones", "textarea", False),
+        ],
+    },
+    "Cuenta Corriente VM": {
+        "table": "cuenta_corriente_vm",
+        "empresa": "VM",
+        "tipo": "cuenta_corriente",
+        "descripcion": "Cuentas por cobrar y pagar de VM.",
+        "fields": [
+            ("fecha", "date", True),
+            ("persona_entidad", "text", True),
+            ("concepto", "text", True),
+            ("tipo", "select", True, ["A cobrar", "A pagar"]),
+            ("importe", "money", True),
+            ("pagado", "money", False),
+            ("vencimiento", "date", False),
+            ("estado", "select", True, ["Pendiente", "Parcial", "Pagado", "Vencido"]),
+            ("observaciones", "textarea", False),
+        ],
+    },
+    "Facturación VM": {
+        "table": "facturacion_vm",
+        "empresa": "VM",
+        "tipo": "facturacion",
+        "descripcion": "Facturas emitidas, cobradas y pendientes de VM.",
+        "fields": [
+            ("fecha", "date", True),
+            ("cliente", "text", True),
+            ("comprobante", "text", False),
+            ("concepto", "text", True),
+            ("importe", "money", True),
+            ("cobrado", "money", False),
+            ("fecha_cobro", "date", False),
+            ("estado", "select", True, ["Pendiente", "Parcial", "Cobrado", "Anulado"]),
+            ("observaciones", "textarea", False),
+        ],
+    },
+    "Deudas Impositivas VMR": {
+        "table": "deudas_impositivas_vmr",
+        "empresa": "VMR",
+        "tipo": "deuda",
+        "descripcion": "IVA, Ganancias, cargas sociales, autónomos, monotributo u otros impuestos VMR.",
+        "fields": [
+            ("fecha", "date", True),
+            ("impuesto", "select", True, ["IVA", "Ganancias", "Ingresos Brutos", "SUSS", "Monotributo", "Autónomos", "Municipal", "Otro"]),
+            ("periodo", "text", True),
+            ("importe", "money", True),
+            ("pagado", "money", False),
+            ("vencimiento", "date", True),
+            ("estado", "select", True, ["Pendiente", "Parcial", "Pagado", "Plan de pago", "Vencido"]),
+            ("observaciones", "textarea", False),
+        ],
+    },
+    "Deudas Impositivas VM": {
+        "table": "deudas_impositivas_vm",
+        "empresa": "VM",
+        "tipo": "deuda",
+        "descripcion": "IVA, Ganancias, cargas sociales, autónomos, monotributo u otros impuestos VM.",
+        "fields": [
+            ("fecha", "date", True),
+            ("impuesto", "select", True, ["IVA", "Ganancias", "Ingresos Brutos", "SUSS", "Monotributo", "Autónomos", "Municipal", "Otro"]),
+            ("periodo", "text", True),
+            ("importe", "money", True),
+            ("pagado", "money", False),
+            ("vencimiento", "date", True),
+            ("estado", "select", True, ["Pendiente", "Parcial", "Pagado", "Plan de pago", "Vencido"]),
+            ("observaciones", "textarea", False),
+        ],
+    },
+    "Planes de pagos y préstamos": {
+        "table": "planes_pagos_prestamos",
+        "empresa": "VITAE",
+        "tipo": "deuda",
+        "descripcion": "Planes AFIP/ARCA, bancos, financieras, préstamos internos y externos.",
+        "fields": [
+            ("fecha", "date", True),
+            ("empresa", "select", True, ["VMR", "VM", "VITAE"]),
+            ("acreedor", "text", True),
+            ("detalle", "text", True),
+            ("cuotas_totales", "int", False),
+            ("cuotas_pagadas", "int", False),
+            ("importe_total", "money", True),
+            ("saldo", "money", True),
+            ("proximo_vencimiento", "date", False),
+            ("estado", "select", True, ["Activo", "Finalizado", "Mora", "Refinanciado"]),
+            ("observaciones", "textarea", False),
+        ],
+    },
+    "Pagos pendientes Vitae": {
+        "table": "pagos_pendientes_vitae",
+        "empresa": "VITAE",
+        "tipo": "pago_pendiente",
+        "descripcion": "Pagos pendientes globales de la empresa.",
+        "fields": [
+            ("fecha", "date", True),
+            ("empresa", "select", True, ["VMR", "VM", "VITAE"]),
+            ("proveedor", "text", True),
+            ("concepto", "text", True),
+            ("importe", "money", True),
+            ("pagado", "money", False),
+            ("vencimiento", "date", False),
+            ("prioridad", "select", True, ["Alta", "Media", "Baja"]),
+            ("estado", "select", True, ["Pendiente", "Parcial", "Pagado", "Vencido"]),
+            ("observaciones", "textarea", False),
+        ],
+    },
+    "Gastos comunes": {
+        "table": "gastos_comunes",
+        "empresa": "VITAE",
+        "tipo": "gasto",
+        "descripcion": "Gastos compartidos entre VMR y VM.",
+        "fields": [
+            ("fecha", "date", True),
+            ("rubro", "select", True, ["Luz", "Agua", "Gas", "Internet", "Limpieza", "Mantenimiento", "Sueldos", "Insumos", "Alquiler", "Otro"]),
+            ("concepto", "text", True),
+            ("importe", "money", True),
+            ("porcentaje_vmr", "number", False),
+            ("porcentaje_vm", "number", False),
+            ("pagado", "bool", False),
+            ("observaciones", "textarea", False),
+        ],
+    },
+    "Vencimientos": {
+        "table": "vencimientos",
+        "empresa": "VITAE",
+        "tipo": "vencimiento",
+        "descripcion": "Calendario general de vencimientos administrativos, impositivos, contratos, habilitaciones e insumos.",
+        "fields": [
+            ("fecha", "date", True),
+            ("empresa", "select", True, ["VMR", "VM", "VITAE"]),
+            ("tipo_vencimiento", "select", True, ["Impuesto", "Servicio", "Contrato", "Habilitación", "Seguro", "Medicamento", "Mantenimiento", "Otro"]),
+            ("detalle", "text", True),
+            ("importe", "money", False),
+            ("vencimiento", "date", True),
+            ("estado", "select", True, ["Pendiente", "Realizado", "Vencido", "Reprogramado"]),
+            ("observaciones", "textarea", False),
+        ],
+    },
+    "Valores Alquileres": {
+        "table": "valores_alquileres",
+        "empresa": "VITAE",
+        "tipo": "contrato_valor",
+        "descripcion": "Control de alquileres, aumentos, valores mensuales y vigencia.",
+        "fields": [
+            ("fecha", "date", True),
+            ("inmueble_area", "text", True),
+            ("locador", "text", False),
+            ("valor_mensual", "money", True),
+            ("periodo", "text", True),
+            ("fecha_desde", "date", False),
+            ("fecha_hasta", "date", False),
+            ("proximo_aumento", "date", False),
+            ("estado", "select", True, ["Vigente", "Finalizado", "A renegociar"]),
+            ("observaciones", "textarea", False),
+        ],
+    },
+    "Tareas Pendientes": {
+        "table": "tareas_pendientes",
+        "empresa": "VITAE",
+        "tipo": "tarea",
+        "descripcion": "Seguimiento de tareas administrativas y operativas.",
+        "fields": [
+            ("fecha", "date", True),
+            ("empresa", "select", True, ["VMR", "VM", "VITAE"]),
+            ("tarea", "text", True),
+            ("responsable", "text", False),
+            ("prioridad", "select", True, ["Alta", "Media", "Baja"]),
+            ("vencimiento", "date", False),
+            ("estado", "select", True, ["Pendiente", "En proceso", "Finalizada", "Cancelada"]),
+            ("observaciones", "textarea", False),
+        ],
+    },
+    "Deuda total": {
+        "table": "deuda_total_manual",
+        "empresa": "VITAE",
+        "tipo": "deuda",
+        "descripcion": "Carga manual de deudas no contempladas en otros módulos. El tablero también calcula deuda total automática.",
+        "fields": [
+            ("fecha", "date", True),
+            ("empresa", "select", True, ["VMR", "VM", "VITAE"]),
+            ("acreedor", "text", True),
+            ("concepto", "text", True),
+            ("importe_original", "money", True),
+            ("pagado", "money", False),
+            ("saldo", "money", True),
+            ("vencimiento", "date", False),
+            ("estado", "select", True, ["Pendiente", "Parcial", "Pagado", "Vencido", "Refinanciado"]),
+            ("observaciones", "textarea", False),
+        ],
+    },
+    "Contratos": {
+        "table": "contratos",
+        "empresa": "VITAE",
+        "tipo": "contrato",
+        "descripcion": "Contratos con profesionales, proveedores, alquileres, servicios y convenios.",
+        "fields": [
+            ("fecha", "date", True),
+            ("empresa", "select", True, ["VMR", "VM", "VITAE"]),
+            ("contraparte", "text", True),
+            ("tipo_contrato", "select", True, ["Profesional", "Proveedor", "Alquiler", "Servicio", "Convenio", "Otro"]),
+            ("detalle", "text", True),
+            ("inicio", "date", False),
+            ("fin", "date", False),
+            ("valor", "money", False),
+            ("estado", "select", True, ["Vigente", "Vencido", "A renovar", "Finalizado"]),
+            ("archivo_link", "text", False),
+            ("observaciones", "textarea", False),
+        ],
+    },
+    "Honorarios médicos": {
+        "table": "honorarios_medicos",
+        "empresa": "VITAE",
+        "tipo": "honorario",
+        "descripcion": "Honorarios por médico, prestación, estado de pago y empresa.",
+        "fields": [
+            ("fecha", "date", True),
+            ("empresa", "select", True, ["VMR", "VM", "VITAE"]),
+            ("medico", "text", True),
+            ("paciente", "text", False),
+            ("procedimiento", "text", True),
+            ("importe", "money", True),
+            ("pagado", "money", False),
+            ("fecha_pago", "date", False),
+            ("estado", "select", True, ["Pendiente", "Parcial", "Pagado"]),
+            ("observaciones", "textarea", False),
+        ],
+    },
+    "Gine Vitae": {
+        "table": "gine_vitae",
+        "empresa": "VM",
+        "tipo": "unidad_medica",
+        "descripcion": "Gestión de pacientes, prácticas, derivaciones y cirugías de la unidad Gine Vitae.",
+        "fields": [
+            ("fecha", "date", True),
+            ("paciente", "text", True),
+            ("dni", "text", False),
+            ("telefono", "text", False),
+            ("medico", "text", False),
+            ("obra_social", "text", False),
+            ("practica", "select", True, ["Consulta", "Control anual", "PAP", "Colposcopía", "HPV", "Ecografía", "Histeroscopía", "LEEP", "DIU", "Cirugía", "Otro"]),
+            ("estado", "select", True, ["Pendiente", "Turno dado", "Realizado", "Derivado a quirófano", "Cancelado"]),
+            ("importe", "money", False),
+            ("cobrado", "money", False),
+            ("proxima_accion", "text", False),
+            ("observaciones", "textarea", False),
+        ],
+    },
+}
+
+# =========================================================
+# BASE DE DATOS
+# =========================================================
+
+def connect() -> sqlite3.Connection:
+    conn = sqlite3.connect(DB_PATH)
+    conn.row_factory = sqlite3.Row
+    return conn
+
+
+def sql_type(field_type: str) -> str:
+    if field_type in {"money", "number"}:
+        return "REAL"
+    if field_type == "int":
+        return "INTEGER"
+    if field_type == "bool":
+        return "INTEGER"
+    return "TEXT"
+
+
+def init_db() -> None:
+    with connect() as conn:
+        for cfg in MODULES.values():
+            columns = ["id INTEGER PRIMARY KEY AUTOINCREMENT", "created_at TEXT", "updated_at TEXT"]
+            for field in cfg["fields"]:
+                name, ftype = field[0], field[1]
+                columns.append(f"{name} {sql_type(ftype)}")
+            conn.execute(f"CREATE TABLE IF NOT EXISTS {cfg['table']} ({', '.join(columns)})")
+        conn.commit()
+
+
+def get_df(table: str) -> pd.DataFrame:
+    with connect() as conn:
+        try:
+            df = pd.read_sql_query(f"SELECT * FROM {table} ORDER BY id DESC", conn)
+        except Exception:
+            df = pd.DataFrame()
+    return df
+
+
+def insert_row(table: str, data: Dict[str, Any]) -> None:
+    now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    data = {**data, "created_at": now, "updated_at": now}
+    cols = list(data.keys())
+    placeholders = ", ".join(["?"] * len(cols))
+    sql = f"INSERT INTO {table} ({', '.join(cols)}) VALUES ({placeholders})"
+    with connect() as conn:
+        conn.execute(sql, [data[c] for c in cols])
+        conn.commit()
+
+
+def update_row(table: str, row_id: int, data: Dict[str, Any]) -> None:
+    data = {**data, "updated_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S")}
+    sets = ", ".join([f"{k} = ?" for k in data.keys()])
+    sql = f"UPDATE {table} SET {sets} WHERE id = ?"
+    with connect() as conn:
+        conn.execute(sql, [*data.values(), row_id])
+        conn.commit()
+
+
+def delete_row(table: str, row_id: int) -> None:
+    with connect() as conn:
+        conn.execute(f"DELETE FROM {table} WHERE id = ?", (row_id,))
+        conn.commit()
+
+# =========================================================
+# HELPERS
+# =========================================================
+
+def money(value: Any) -> float:
+    try:
+        if pd.isna(value) or value == "":
+            return 0.0
+        return float(value)
+    except Exception:
+        return 0.0
+
+
+def fmt_money(value: Any) -> str:
+    return f"$ {money(value):,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
+
+
+def parse_date(value: Any) -> date | None:
+    if value in (None, "", pd.NaT):
+        return None
+    try:
+        return pd.to_datetime(value).date()
+    except Exception:
+        return None
+
+
+def clean_for_db(value: Any, ftype: str) -> Any:
+    if isinstance(value, date):
+        return value.strftime(DATE_FMT)
+    if ftype == "bool":
+        return 1 if value else 0
+    if ftype in {"money", "number"}:
+        return float(value or 0)
+    if ftype == "int":
+        return int(value or 0)
+    return value or ""
+
+
+def default_value(ftype: str, options: List[str] | None = None) -> Any:
+    if ftype == "date":
+        return date.today()
+    if ftype in {"money", "number"}:
+        return 0.0
+    if ftype == "int":
+        return 0
+    if ftype == "bool":
+        return False
+    if ftype == "select":
+        return options[0] if options else ""
+    return ""
+
+
+def input_field(field: Tuple, prefix: str, existing: Dict[str, Any] | None = None) -> Any:
+    name, ftype, required = field[0], field[1], field[2]
+    options = field[3] if len(field) > 3 else None
+    label = name.replace("_", " ").title() + (" *" if required else "")
+    key = f"{prefix}_{name}"
+    old = existing.get(name) if existing else None
+
+    if ftype == "date":
+        value = parse_date(old) if old else date.today()
+        return st.date_input(label, value=value, key=key)
+    if ftype == "money":
+        return st.number_input(label, min_value=0.0, step=1000.0, value=money(old), key=key)
+    if ftype == "number":
+        return st.number_input(label, step=1.0, value=float(money(old)), key=key)
+    if ftype == "int":
+        return st.number_input(label, min_value=0, step=1, value=int(money(old)), key=key)
+    if ftype == "bool":
+        return st.checkbox(label, value=bool(old), key=key)
+    if ftype == "select":
+        idx = 0
+        if old in options:
+            idx = options.index(old)
+        return st.selectbox(label, options, index=idx, key=key)
+    if ftype == "textarea":
+        return st.text_area(label, value=str(old or ""), key=key)
+    return st.text_input(label, value=str(old or ""), key=key)
+
+
+def validate_required(cfg: Dict[str, Any], data: Dict[str, Any]) -> List[str]:
+    errors = []
+    for field in cfg["fields"]:
+        name, ftype, required = field[0], field[1], field[2]
+        if required and ftype not in {"money", "number", "int", "bool"} and not data.get(name):
+            errors.append(name.replace("_", " ").title())
+        if required and ftype in {"money", "number"} and money(data.get(name)) <= 0:
+            errors.append(name.replace("_", " ").title())
+    return errors
+
+
+def add_balance_columns(df: pd.DataFrame) -> pd.DataFrame:
+    if df.empty:
+        return df
+    df = df.copy()
+    if "ingreso" in df.columns and "egreso" in df.columns:
+        df["saldo_movimiento"] = df["ingreso"].apply(money) - df["egreso"].apply(money)
+    if "importe" in df.columns and "pagado" in df.columns:
+        df["saldo"] = df["importe"].apply(money) - df["pagado"].apply(money)
+    if "importe_total" in df.columns and "saldo" in df.columns:
+        df["saldo"] = df["saldo"].apply(money)
+    if "importe_original" in df.columns and "saldo" in df.columns:
+        df["saldo"] = df["saldo"].apply(money)
+    return df
+
+
+def apply_filters(df: pd.DataFrame, module_name: str) -> pd.DataFrame:
+    if df.empty:
+        return df
+    df = df.copy()
+    st.subheader("Filtros")
+    c1, c2, c3, c4 = st.columns(4)
+
+    with c1:
+        search = st.text_input("Buscar texto", key=f"search_{module_name}")
+    with c2:
+        estado = "Todos"
+        if "estado" in df.columns:
+            estados = ["Todos"] + sorted([x for x in df["estado"].dropna().unique().tolist() if x != ""])
+            estado = st.selectbox("Estado", estados, key=f"estado_{module_name}")
+    with c3:
+        fecha_desde = st.date_input("Desde", value=date.today() - timedelta(days=365), key=f"desde_{module_name}")
+    with c4:
+        fecha_hasta = st.date_input("Hasta", value=date.today() + timedelta(days=365), key=f"hasta_{module_name}")
+
+    if search:
+        mask = df.astype(str).apply(lambda col: col.str.contains(search, case=False, na=False)).any(axis=1)
+        df = df[mask]
+    if "estado" in df.columns and estado != "Todos":
+        df = df[df["estado"] == estado]
+    if "fecha" in df.columns:
+        f = pd.to_datetime(df["fecha"], errors="coerce").dt.date
+        df = df[(f >= fecha_desde) & (f <= fecha_hasta)]
+    return df
+
+# =========================================================
+# VISTAS
+# =========================================================
+
+def render_header() -> None:
+    st.markdown('<div class="main-title">🏥 VITAE | Sistema Integral de Gestión</div>', unsafe_allow_html=True)
+    st.markdown('<div class="subtitle">VMR · Vitae Medicina Reproductiva | VM · Vitae Medical</div>', unsafe_allow_html=True)
+
+
+def render_dashboard() -> None:
+    render_header()
+    st.info("Tablero global calculado automáticamente desde todos los módulos cargados.")
+
+    dfs = {name: add_balance_columns(get_df(cfg["table"])) for name, cfg in MODULES.items()}
+
+    ingresos = 0.0
+    egresos = 0.0
+    deuda = 0.0
+    a_cobrar = 0.0
+    vencidos = 0
+    tareas_pend = 0
+
+    deuda_modules = [
+        "Deudas Impositivas VMR", "Deudas Impositivas VM", "Planes de pagos y préstamos",
+        "Pagos pendientes Vitae", "Deuda total", "Honorarios médicos"
+    ]
+
+    for name, df in dfs.items():
+        if df.empty:
+            continue
+        if "ingreso" in df.columns:
+            ingresos += df["ingreso"].apply(money).sum()
+        if "egreso" in df.columns:
+            egresos += df["egreso"].apply(money).sum()
+        if "importe" in df.columns and name in ["Facturación VMR", "Facturación VM", "Gine Vitae"]:
+            cob = df["cobrado"].apply(money).sum() if "cobrado" in df.columns else 0
+            ingresos += cob
+            a_cobrar += max(0, df["importe"].apply(money).sum() - cob)
+        if name in deuda_modules:
+            if "saldo" in df.columns:
+                deuda += df["saldo"].apply(money).sum()
+            elif "importe" in df.columns:
+                pag = df["pagado"].apply(money).sum() if "pagado" in df.columns else 0
+                deuda += max(0, df["importe"].apply(money).sum() - pag)
+        if "vencimiento" in df.columns:
+            venc = pd.to_datetime(df["vencimiento"], errors="coerce").dt.date
+            estado = df["estado"].astype(str).str.lower() if "estado" in df.columns else ""
+            vencidos += int(((venc < date.today()) & (~estado.isin(["pagado", "cobrado", "realizado", "finalizada", "finalizado"]))).sum())
+        if name == "Tareas Pendientes" and "estado" in df.columns:
+            tareas_pend += int(df[~df["estado"].isin(["Finalizada", "Cancelada"])].shape[0])
+
+    saldo = ingresos - egresos
+    c1, c2, c3, c4, c5 = st.columns(5)
+    c1.metric("Ingresos registrados", fmt_money(ingresos))
+    c2.metric("Egresos registrados", fmt_money(egresos))
+    c3.metric("Saldo operativo", fmt_money(saldo))
+    c4.metric("Deuda total estimada", fmt_money(deuda))
+    c5.metric("A cobrar", fmt_money(a_cobrar))
+
+    c6, c7, c8 = st.columns(3)
+    c6.metric("Vencidos / críticos", vencidos)
+    c7.metric("Tareas pendientes", tareas_pend)
+    c8.metric("Base de datos", str(DB_PATH))
+
+    st.divider()
+
+    rows = []
+    for name, df in dfs.items():
+        cfg = MODULES[name]
+        total_importe = df["importe"].apply(money).sum() if "importe" in df.columns else 0
+        total_saldo = df["saldo"].apply(money).sum() if "saldo" in df.columns else 0
+        total_ing = df["ingreso"].apply(money).sum() if "ingreso" in df.columns else 0
+        total_egr = df["egreso"].apply(money).sum() if "egreso" in df.columns else 0
+        rows.append({
+            "Módulo": name,
+            "Empresa": cfg["empresa"],
+            "Registros": len(df),
+            "Ingresos": total_ing,
+            "Egresos": total_egr,
+            "Importes": total_importe,
+            "Saldos": total_saldo,
+        })
+    summary = pd.DataFrame(rows)
+    st.subheader("Resumen por módulo")
+    st.dataframe(summary, use_container_width=True, hide_index=True)
+
+    chart_df = summary[summary["Registros"] > 0]
+    if not chart_df.empty:
+        fig = px.bar(chart_df, x="Módulo", y="Registros", color="Empresa", title="Registros cargados por módulo")
+        fig.update_layout(xaxis_tickangle=-35)
+        st.plotly_chart(fig, use_container_width=True)
+
+    st.subheader("Próximos vencimientos")
+    venc_rows = []
+    for name, df in dfs.items():
+        if df.empty or "vencimiento" not in df.columns:
+            continue
+        temp = df.copy()
+        temp["vencimiento_dt"] = pd.to_datetime(temp["vencimiento"], errors="coerce").dt.date
+        temp = temp[temp["vencimiento_dt"].notna()]
+        temp = temp[(temp["vencimiento_dt"] >= date.today()) & (temp["vencimiento_dt"] <= date.today() + timedelta(days=30))]
+        for _, row in temp.iterrows():
+            venc_rows.append({
+                "Módulo": name,
+                "Vencimiento": row.get("vencimiento"),
+                "Detalle": row.get("concepto") or row.get("detalle") or row.get("tarea") or row.get("acreedor") or "",
+                "Importe": row.get("importe") or row.get("saldo") or row.get("valor") or 0,
+                "Estado": row.get("estado", ""),
+            })
+    venc_df = pd.DataFrame(venc_rows)
+    if venc_df.empty:
+        st.success("No hay vencimientos cargados para los próximos 30 días.")
+    else:
+        st.dataframe(venc_df.sort_values("Vencimiento"), use_container_width=True, hide_index=True)
+
+
+def render_module(module_name: str) -> None:
+    cfg = MODULES[module_name]
+    table = cfg["table"]
+    render_header()
+    st.header(module_name)
+    st.caption(cfg["descripcion"])
+
+    tab1, tab2, tab3, tab4 = st.tabs(["➕ Cargar", "📋 Registros", "✏️ Editar / Eliminar", "📤 Exportar"])
+
+    with tab1:
+        st.subheader("Nuevo registro")
+        with st.form(f"form_add_{table}", clear_on_submit=True):
+            data: Dict[str, Any] = {}
+            cols = st.columns(2)
+            for i, field in enumerate(cfg["fields"]):
+                with cols[i % 2]:
+                    raw = input_field(field, f"add_{table}")
+                    data[field[0]] = clean_for_db(raw, field[1])
+            submitted = st.form_submit_button("Guardar registro", type="primary")
+            if submitted:
+                errors = validate_required(cfg, data)
+                if errors:
+                    st.error("Faltan completar campos obligatorios: " + ", ".join(errors))
+                else:
+                    insert_row(table, data)
+                    st.success("Registro guardado correctamente.")
+                    st.rerun()
+
+    with tab2:
+        df = add_balance_columns(get_df(table))
+        if df.empty:
+            st.warning("Todavía no hay registros cargados en este módulo.")
+        else:
+            filtered = apply_filters(df, module_name)
+            st.subheader("Indicadores del módulo")
+            m1, m2, m3, m4 = st.columns(4)
+            m1.metric("Registros", len(filtered))
+            if "ingreso" in filtered.columns:
+                m2.metric("Ingresos", fmt_money(filtered["ingreso"].apply(money).sum()))
+            if "egreso" in filtered.columns:
+                m3.metric("Egresos", fmt_money(filtered["egreso"].apply(money).sum()))
+            if "saldo_movimiento" in filtered.columns:
+                m4.metric("Saldo", fmt_money(filtered["saldo_movimiento"].apply(money).sum()))
+            elif "saldo" in filtered.columns:
+                m4.metric("Saldo", fmt_money(filtered["saldo"].apply(money).sum()))
+            elif "importe" in filtered.columns:
+                m4.metric("Total importe", fmt_money(filtered["importe"].apply(money).sum()))
+
+            st.dataframe(filtered, use_container_width=True, hide_index=True)
+
+            if "fecha" in filtered.columns and not filtered.empty:
+                graph = filtered.copy()
+                graph["fecha"] = pd.to_datetime(graph["fecha"], errors="coerce")
+                y_col = None
+                if "saldo_movimiento" in graph.columns:
+                    y_col = "saldo_movimiento"
+                elif "saldo" in graph.columns:
+                    y_col = "saldo"
+                elif "importe" in graph.columns:
+                    y_col = "importe"
+                if y_col:
+                    chart = graph.groupby(graph["fecha"].dt.date)[y_col].sum().reset_index()
+                    fig = px.line(chart, x="fecha", y=y_col, markers=True, title=f"Evolución: {module_name}")
+                    st.plotly_chart(fig, use_container_width=True)
+
+    with tab3:
+        df = get_df(table)
+        if df.empty:
+            st.warning("No hay registros para editar.")
+        else:
+            ids = df["id"].tolist()
+            selected_id = st.selectbox("Seleccionar ID", ids, key=f"edit_select_{table}")
+            row = df[df["id"] == selected_id].iloc[0].to_dict()
+            st.caption(f"Creado: {row.get('created_at', '')} | Última actualización: {row.get('updated_at', '')}")
+
+            with st.form(f"form_edit_{table}"):
+                data: Dict[str, Any] = {}
+                cols = st.columns(2)
+                for i, field in enumerate(cfg["fields"]):
+                    with cols[i % 2]:
+                        raw = input_field(field, f"edit_{table}_{selected_id}", row)
+                        data[field[0]] = clean_for_db(raw, field[1])
+                save = st.form_submit_button("Guardar cambios", type="primary")
+                if save:
+                    errors = validate_required(cfg, data)
+                    if errors:
+                        st.error("Faltan completar campos obligatorios: " + ", ".join(errors))
+                    else:
+                        update_row(table, int(selected_id), data)
+                        st.success("Registro actualizado correctamente.")
+                        st.rerun()
+
+            st.warning("Zona de eliminación")
+            confirm = st.checkbox("Confirmo que quiero eliminar este registro", key=f"confirm_delete_{table}_{selected_id}")
+            if st.button("Eliminar registro", disabled=not confirm, type="secondary"):
+                delete_row(table, int(selected_id))
+                st.success("Registro eliminado.")
+                st.rerun()
+
+    with tab4:
+        df = add_balance_columns(get_df(table))
+        if df.empty:
+            st.info("No hay datos para exportar.")
+        else:
+            csv = df.to_csv(index=False).encode("utf-8-sig")
+            st.download_button(
+                "Descargar CSV",
+                data=csv,
+                file_name=f"{table}.csv",
+                mime="text/csv",
+            )
+            xlsx_path = Path(f"{table}.xlsx")
+            df.to_excel(xlsx_path, index=False)
+            with open(xlsx_path, "rb") as f:
+                st.download_button(
+                    "Descargar Excel",
+                    data=f,
+                    file_name=f"{table}.xlsx",
+                    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                )
+
+
+def render_admin() -> None:
+    render_header()
+    st.header("⚙️ Administración")
+    st.write("Herramientas de mantenimiento local.")
+
+    st.subheader("Base de datos")
+    st.code(str(DB_PATH.resolve()))
+
+    if st.button("Inicializar / reparar tablas"):
+        init_db()
+        st.success("Tablas verificadas correctamente.")
+
+    st.subheader("Carga de datos de ejemplo")
+    if st.button("Crear ejemplos mínimos"):
+        seed_examples()
+        st.success("Datos de ejemplo creados.")
+        st.rerun()
+
+    st.subheader("Exportación global")
+    all_data = {}
+    for name, cfg in MODULES.items():
+        df = get_df(cfg["table"])
+        if not df.empty:
+            all_data[name[:31]] = df
+    if all_data:
+        export_path = Path("vitae_export_global.xlsx")
+        with pd.ExcelWriter(export_path, engine="openpyxl") as writer:
+            for sheet, df in all_data.items():
+                df.to_excel(writer, sheet_name=sheet, index=False)
+        with open(export_path, "rb") as f:
+            st.download_button(
+                "Descargar Excel global",
+                data=f,
+                file_name="vitae_export_global.xlsx",
+                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            )
+    else:
+        st.info("Todavía no hay datos para exportación global.")
+
+    st.subheader("Borrado total")
+    st.error("Esta acción elimina todos los registros de todos los módulos.")
+    erase = st.checkbox("Confirmo borrado total de la base local")
+    if st.button("Borrar todos los datos", disabled=not erase):
+        with connect() as conn:
+            for cfg in MODULES.values():
+                conn.execute(f"DELETE FROM {cfg['table']}")
+            conn.commit()
+        st.success("Base vaciada.")
+        st.rerun()
+
+
+def seed_examples() -> None:
+    examples = [
+        ("caja_vmr", {"fecha": date.today().strftime(DATE_FMT), "concepto": "Ingreso muestra fertilidad", "categoria": "Ingreso", "medio": "Efectivo", "ingreso": 150000, "egreso": 0, "responsable": "Administración", "observaciones": "Ejemplo"}),
+        ("banco_galicia_vm", {"fecha": date.today().strftime(DATE_FMT), "concepto": "Pago proveedor quirófano", "tipo_movimiento": "Débito", "referencia": "OP-001", "ingreso": 0, "egreso": 80000, "conciliado": 1, "observaciones": "Ejemplo"}),
+        ("pagos_pendientes_vitae", {"fecha": date.today().strftime(DATE_FMT), "empresa": "VITAE", "proveedor": "Proveedor insumos", "concepto": "Insumos médicos", "importe": 120000, "pagado": 0, "vencimiento": (date.today() + timedelta(days=7)).strftime(DATE_FMT), "prioridad": "Alta", "estado": "Pendiente", "observaciones": "Ejemplo"}),
+        ("tareas_pendientes", {"fecha": date.today().strftime(DATE_FMT), "empresa": "VM", "tarea": "Revisar stock quirófano", "responsable": "Enfermería", "prioridad": "Alta", "vencimiento": (date.today() + timedelta(days=3)).strftime(DATE_FMT), "estado": "Pendiente", "observaciones": "Ejemplo"}),
+    ]
+    for table, data in examples:
+        insert_row(table, data)
+
+# =========================================================
+# APP
+# =========================================================
+
+def main() -> None:
+    init_db()
+
+    st.sidebar.title("VITAE")
+    st.sidebar.caption("Sistema interno de gestión")
+
+    page = st.sidebar.radio(
+        "Navegación",
+        ["Dashboard Global", "Módulos", "Administración"],
+    )
+
+    if page == "Dashboard Global":
+        render_dashboard()
+    elif page == "Módulos":
+        empresas = ["Todos", "VMR", "VM", "VITAE"]
+        empresa_filter = st.sidebar.selectbox("Empresa", empresas)
+        module_names = list(MODULES.keys())
+        if empresa_filter != "Todos":
+            module_names = [m for m in module_names if MODULES[m]["empresa"] == empresa_filter or MODULES[m]["empresa"] == "VITAE"]
+        module_name = st.sidebar.selectbox("Módulo", module_names)
+        render_module(module_name)
+    else:
+        render_admin()
+
+    st.sidebar.divider()
+    st.sidebar.markdown("**Módulos incluidos**")
+    st.sidebar.caption(f"{len(MODULES)} módulos activos")
+
+
+if __name__ == "__main__":
+    main()
