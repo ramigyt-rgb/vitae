@@ -683,32 +683,72 @@ def add_balance_columns(df: pd.DataFrame) -> pd.DataFrame:
 
 
 def apply_filters(df: pd.DataFrame, module_name: str) -> pd.DataFrame:
+    """Filtros seguros para todos los módulos.
+
+    Corrige el problema de comparar fechas tipo datetime.date contra Series
+    con dtype datetime64, y soporta módulos que no tienen columna `fecha`,
+    como Facturación VMR/VM, que usan `fecha_factura`.
+    """
     if df.empty:
         return df
+
     df = df.copy()
     st.subheader("Filtros")
     c1, c2, c3, c4 = st.columns(4)
 
     with c1:
         search = st.text_input("Buscar texto", key=f"search_{module_name}")
+
     with c2:
         estado = "Todos"
         if "estado" in df.columns:
-            estados = ["Todos"] + sorted([x for x in df["estado"].dropna().unique().tolist() if x != ""])
-            estado = st.selectbox("Estado", estados, key=f"estado_{module_name}")
+            estados = [
+                str(x).strip()
+                for x in df["estado"].dropna().unique().tolist()
+                if str(x).strip() != ""
+            ]
+            estado = st.selectbox("Estado", ["Todos"] + sorted(estados), key=f"estado_{module_name}")
+
     with c3:
-        fecha_desde = st.date_input("Desde", value=date.today() - timedelta(days=365), key=f"desde_{module_name}")
+        fecha_desde = st.date_input(
+            "Desde",
+            value=date.today() - timedelta(days=365),
+            key=f"desde_{module_name}",
+        )
+
     with c4:
-        fecha_hasta = st.date_input("Hasta", value=date.today() + timedelta(days=365), key=f"hasta_{module_name}")
+        fecha_hasta = st.date_input(
+            "Hasta",
+            value=date.today() + timedelta(days=365),
+            key=f"hasta_{module_name}",
+        )
 
     if search:
-        mask = df.astype(str).apply(lambda col: col.str.contains(search, case=False, na=False)).any(axis=1)
+        mask = df.astype(str).apply(
+            lambda col: col.str.contains(search, case=False, na=False)
+        ).any(axis=1)
         df = df[mask]
+
     if "estado" in df.columns and estado != "Todos":
-        df = df[df["estado"] == estado]
-    if "fecha" in df.columns:
-        f = pd.to_datetime(df["fecha"], errors="coerce").dt.date
-        df = df[(f >= fecha_desde) & (f <= fecha_hasta)]
+        df = df[df["estado"].astype(str).str.strip() == estado]
+
+    # Elegimos la mejor columna de fecha disponible para filtrar.
+    # Facturación usa fecha_factura; otros módulos usan fecha; algunos solo vencimiento.
+    fecha_col = None
+    for candidate in ["fecha", "fecha_factura", "vencimiento", "fecha_pago", "proximo_vencimiento", "fecha_desde", "fecha_hasta"]:
+        if candidate in df.columns:
+            fecha_col = candidate
+            break
+
+    if fecha_col:
+        fechas = pd.to_datetime(df[fecha_col], errors="coerce")
+        desde_ts = pd.Timestamp(fecha_desde)
+        hasta_ts = pd.Timestamp(fecha_hasta)
+
+        # Mantiene solo filas con fecha válida dentro del rango.
+        # Si una fila no tiene fecha, no rompe la app; simplemente no entra al filtro de fechas.
+        df = df[fechas.notna() & (fechas >= desde_ts) & (fechas <= hasta_ts)]
+
     return df
 
 # =========================================================
