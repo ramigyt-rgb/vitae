@@ -18,7 +18,7 @@ import streamlit as st
 # CONFIG GENERAL
 # =========================================================
 
-APP_TITLE = "VITAE | Sistema Integral de Gestión | FACTURACION FECHAS OK"
+APP_TITLE = "VITAE | Sistema Integral de Gestión | FACTURACION FILTROS OK"
 DB_PATH = Path("vitae_gestion.db")
 DATE_FMT = "%Y-%m-%d"
 
@@ -733,12 +733,16 @@ def apply_filters(df: pd.DataFrame, module_name: str) -> pd.DataFrame:
         df = df[df["estado"].astype(str).str.strip() == estado]
 
     # Elegimos la mejor columna de fecha disponible para filtrar.
-    # Facturación usa fecha_factura; otros módulos usan fecha; algunos solo vencimiento.
-    fecha_col = None
-    for candidate in ["fecha", "fecha_factura", "vencimiento", "fecha_pago", "proximo_vencimiento", "fecha_desde", "fecha_hasta"]:
-        if candidate in df.columns:
-            fecha_col = candidate
-            break
+    # IMPORTANTE: SQLite conserva columnas viejas. En Facturación pueden existir
+    # columnas antiguas como `fecha`, pero la columna correcta actual es `fecha_factura`.
+    if module_name in ["Facturación VMR", "Facturación VM"] and "fecha_factura" in df.columns:
+        fecha_col = "fecha_factura"
+    else:
+        fecha_col = None
+        for candidate in ["fecha", "vencimiento", "fecha_pago", "proximo_vencimiento", "fecha_desde", "fecha_hasta"]:
+            if candidate in df.columns:
+                fecha_col = candidate
+                break
 
     if fecha_col:
         fechas = pd.to_datetime(df[fecha_col], errors="coerce")
@@ -1259,7 +1263,12 @@ def render_module(module_name: str) -> None:
 
             show_module_table(filtered, cfg)
 
-            fecha_col = "fecha" if "fecha" in filtered.columns else ("fecha_factura" if "fecha_factura" in filtered.columns else None)
+            if module_name in ["Facturación VMR", "Facturación VM"] and "fecha_factura" in filtered.columns:
+                fecha_col = "fecha_factura"
+            elif "fecha" in filtered.columns:
+                fecha_col = "fecha"
+            else:
+                fecha_col = None
             if fecha_col and not filtered.empty:
                 graph = filtered.copy()
                 graph[fecha_col] = pd.to_datetime(graph[fecha_col], errors="coerce")
