@@ -18,7 +18,7 @@ import streamlit as st
 # CONFIG GENERAL
 # =========================================================
 
-APP_TITLE = "VITAE | Sistema Integral de Gestión | IMPORTADOR OK"
+APP_TITLE = "VITAE | Sistema Integral de Gestión | FACTURACION FECHAS OK"
 DB_PATH = Path("vitae_gestion.db")
 DATE_FMT = "%Y-%m-%d"
 
@@ -566,15 +566,37 @@ def get_field_names(cfg: Dict[str, Any]) -> List[str]:
 
 
 def parse_date(value: Any) -> date | None:
-    if value in (None, "", pd.NaT):
+    """Parsea fechas de Excel/CSV de forma segura.
+
+    Devuelve None cuando la celda está vacía, contiene NaT, texto inválido
+    o cualquier valor que Pandas no pueda convertir. Esto evita errores al
+    importar planillas con fecha_pago/vencimiento vacíos.
+    """
+    if value is None:
         return None
+
     try:
-        return pd.to_datetime(value, dayfirst=True, errors="coerce").date()
+        if pd.isna(value):
+            return None
+    except Exception:
+        pass
+
+    if isinstance(value, str) and value.strip() == "":
+        return None
+
+    try:
+        parsed = pd.to_datetime(value, dayfirst=True, errors="coerce")
+        if pd.isna(parsed):
+            return None
+        return parsed.date()
     except Exception:
         return None
 
 
 def clean_for_db(value: Any, ftype: str) -> Any:
+    if ftype == "date":
+        parsed = parse_date(value)
+        return parsed.strftime(DATE_FMT) if parsed else ""
     if isinstance(value, date):
         return value.strftime(DATE_FMT)
     if ftype == "bool":
@@ -873,7 +895,12 @@ def clean_import_value(value: Any, field: Tuple) -> Any:
 
     if ftype == "date":
         parsed = parse_date(value)
-        return parsed.strftime(DATE_FMT) if parsed else ""
+        if parsed is None:
+            return ""
+        try:
+            return parsed.strftime(DATE_FMT)
+        except Exception:
+            return ""
     if ftype in {"money", "number"}:
         num = pd.to_numeric(normalize_money_string(value), errors="coerce")
         return 0.0 if pd.isna(num) else float(num)
