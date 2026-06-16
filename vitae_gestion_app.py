@@ -6,8 +6,6 @@
 from __future__ import annotations
 
 import sqlite3
-import re
-import unicodedata
 from pathlib import Path
 from datetime import date, datetime, timedelta
 from typing import Any, Dict, List, Tuple
@@ -20,7 +18,7 @@ import streamlit as st
 # CONFIG GENERAL
 # =========================================================
 
-APP_TITLE = "VITAE | Sistema Integral de Gestión | IMPORTADOR GLOBAL OK"
+APP_TITLE = "VITAE | Sistema Integral de Gestión | IMPORTADOR OK"
 DB_PATH = Path("vitae_gestion.db")
 DATE_FMT = "%Y-%m-%d"
 
@@ -880,252 +878,6 @@ def render_importer(module_name: str, cfg: Dict[str, Any]) -> None:
         st.success(f"Importación completada. Registros importados en {module_name}: {count}")
         st.rerun()
 
-
-def normalize_text_key(value: Any) -> str:
-    """Normaliza nombres de hojas/columnas para comparar sin tildes, símbolos ni mayúsculas."""
-    text = str(value or "").strip().lower()
-    text = unicodedata.normalize("NFKD", text)
-    text = "".join(ch for ch in text if not unicodedata.combining(ch))
-    text = re.sub(r"[^a-z0-9]+", " ", text)
-    return re.sub(r"\s+", " ", text).strip()
-
-
-def auto_guess_module(sheet_name: str) -> str:
-    """Intenta asignar automáticamente una hoja del Excel a un módulo de VITAE."""
-    s = normalize_text_key(sheet_name)
-
-    # Primero intenta coincidencia directa contra el nombre del módulo
-    for module_name in MODULES.keys():
-        m = normalize_text_key(module_name)
-        if s == m or s in m or m in s:
-            return module_name
-
-    # Reglas prácticas para nombres habituales de Google Sheets
-    rules = [
-        ("Caja VMR", ["caja vmr", "efectivo vmr"]),
-        ("Caja VM", ["caja vm", "efectivo vm", "caja medical"]),
-        ("Banco Macro VMR", ["macro", "banco macro", "macro vmr"]),
-        ("Banco Galicia VM", ["galicia", "banco galicia", "galicia vm"]),
-        ("Cuenta Corriente VMR", ["cuenta corriente vmr", "cc vmr", "corriente vmr"]),
-        ("Cuenta Corriente VM", ["cuenta corriente vm", "cc vm", "corriente vm"]),
-        ("Facturación VMR", ["facturacion vmr", "facturacion reproductiva", "facturas vmr"]),
-        ("Facturación VM", ["facturacion vm", "facturacion medical", "facturas vm"]),
-        ("Deudas Impositivas VMR", ["deudas impositivas vmr", "impuestos vmr", "arca vmr", "afip vmr"]),
-        ("Deudas Impositivas VM", ["deudas impositivas vm", "impuestos vm", "arca vm", "afip vm"]),
-        ("Planes de pagos y préstamos", ["planes", "prestamos", "prestamos", "plan de pago", "planes de pago"]),
-        ("Pagos pendientes Vitae", ["pagos pendientes", "pendientes vitae", "proveedores pendientes"]),
-        ("Gastos comunes", ["gastos comunes", "gastos compartidos", "comunes"]),
-        ("Vencimientos", ["vencimientos", "vencimiento", "calendario"]),
-        ("Valores Alquileres", ["alquileres", "valores alquileres", "alquiler"]),
-        ("Tareas Pendientes", ["tareas", "pendientes", "to do"]),
-        ("Deuda total", ["deuda total", "deudas generales", "deuda"]),
-        ("Contratos", ["contratos", "convenios"]),
-        ("Honorarios médicos", ["honorarios", "honorarios medicos", "medicos", "profesionales"]),
-        ("Gine Vitae", ["gine", "gine vitae", "ginecologia", "ginecología"]),
-    ]
-    for module_name, patterns in rules:
-        for pat in patterns:
-            p = normalize_text_key(pat)
-            if p in s:
-                return module_name
-    return "No importar"
-
-
-def build_import_rows_from_mapping(
-    df_original: pd.DataFrame,
-    cfg: Dict[str, Any],
-    mapping: Dict[str, str],
-    validar_obligatorios: bool,
-) -> Tuple[List[Dict[str, Any]], List[Dict[str, Any]]]:
-    """Convierte una hoja ya mapeada en filas listas para insertar en SQLite."""
-    rows: List[Dict[str, Any]] = []
-    rejected_rows: List[Dict[str, Any]] = []
-
-    df_original = df_original.dropna(how="all").copy()
-
-    for idx, source_row in df_original.iterrows():
-        if source_row.isna().all():
-            continue
-
-        new_row: Dict[str, Any] = {}
-        for field in cfg["fields"]:
-            name = field[0]
-            mapped_col = mapping.get(name, "No usar")
-            if mapped_col == "No usar":
-                new_row[name] = clean_for_db(default_value(field[1], field[3] if len(field) > 3 else None), field[1])
-                if field[1] == "date" and not field[2]:
-                    new_row[name] = ""
-            else:
-                new_row[name] = clean_import_value(source_row.get(mapped_col), field)
-
-        errors = validate_required(cfg, new_row) if validar_obligatorios else []
-        if errors:
-            rejected_rows.append({"fila_excel": idx + 2, "motivo": ", ".join(errors), **new_row})
-        else:
-            rows.append(new_row)
-
-    return rows, rejected_rows
-
-
-def render_global_excel_importer() -> None:
-    """Importa un único Excel de Google Sheets con múltiples hojas hacia varios módulos."""
-    st.subheader("📚 Importador global de Excel")
-    st.caption(
-        "Subí un solo .xlsx exportado desde Google Sheets. La app detecta todas las hojas, "
-        "vos elegís qué hoja corresponde a cada módulo y después mapeás las columnas de cada una."
-    )
-
-    uploaded_file = st.file_uploader(
-        "Subir Excel global exportado desde Google Sheets",
-        type=["xlsx", "xls"],
-        key="global_excel_importer_file",
-    )
-
-    if uploaded_file is None:
-        st.info("Desde Google Sheets usá: Archivo → Descargar → Microsoft Excel (.xlsx). Después subilo acá.")
-        return
-
-    try:
-        sheets = read_uploaded_sheet(uploaded_file)
-    except Exception as e:
-        st.error(f"No pude leer el Excel. Revisá que sea .xlsx válido y que openpyxl esté en requirements.txt. Detalle: {e}")
-        return
-
-    if not sheets:
-        st.warning("El archivo no tiene hojas legibles.")
-        return
-
-    st.success(f"Excel leído correctamente. Hojas detectadas: {len(sheets)}")
-
-    module_options = ["No importar"] + list(MODULES.keys())
-
-    st.markdown("### 1) Asignar hojas a módulos")
-    st.caption("La app propone una asignación por nombre. Corregí lo que haga falta.")
-
-    sheet_to_module: Dict[str, str] = {}
-    assign_cols = st.columns(2)
-    for i, sheet_name in enumerate(sheets.keys()):
-        guessed_module = auto_guess_module(sheet_name)
-        index = module_options.index(guessed_module) if guessed_module in module_options else 0
-        with assign_cols[i % 2]:
-            sheet_to_module[sheet_name] = st.selectbox(
-                f"Hoja: {sheet_name}",
-                module_options,
-                index=index,
-                key=f"global_sheet_module_{sheet_name}",
-            )
-
-    assigned = {sheet: mod for sheet, mod in sheet_to_module.items() if mod != "No importar"}
-    if not assigned:
-        st.warning("Todavía no asignaste ninguna hoja a ningún módulo.")
-        return
-
-    with st.expander("Opciones globales", expanded=True):
-        global_mode = st.radio(
-            "Modo de importación",
-            ["Agregar a registros existentes", "Reemplazar módulos asignados"],
-            key="global_import_mode",
-        )
-        validar_obligatorios = st.checkbox(
-            "Validar campos obligatorios",
-            value=False,
-            key="global_valid_required",
-        )
-        st.caption(
-            "Si elegís reemplazar, se borran solamente los módulos asignados en esta importación. "
-            "Los módulos no asignados no se tocan."
-        )
-
-    st.markdown("### 2) Mapear columnas por hoja")
-
-    rows_by_module: Dict[str, List[Dict[str, Any]]] = {module_name: [] for module_name in MODULES}
-    rejected_all: List[Dict[str, Any]] = []
-    preview_blocks: List[Dict[str, Any]] = []
-
-    for sheet_name, module_name in assigned.items():
-        cfg = MODULES[module_name]
-        df_original = sheets[sheet_name].copy().dropna(how="all")
-        df_original.columns = [str(c).strip() for c in df_original.columns]
-
-        with st.expander(f"Hoja '{sheet_name}' → {module_name}", expanded=False):
-            if df_original.empty:
-                st.warning("Esta hoja está vacía.")
-                continue
-
-            st.markdown("**Vista previa original**")
-            st.dataframe(df_original.head(15), use_container_width=True, hide_index=True)
-
-            columnas = df_original.columns.tolist()
-            mapping: Dict[str, str] = {}
-            map_cols = st.columns(2)
-            for j, field in enumerate(cfg["fields"]):
-                field_name = field[0]
-                guessed_col = auto_guess_column(field_name, columnas)
-                col_options = ["No usar"] + columnas
-                col_index = col_options.index(guessed_col) if guessed_col in col_options else 0
-                with map_cols[j % 2]:
-                    mapping[field_name] = st.selectbox(
-                        field_label(field),
-                        col_options,
-                        index=col_index,
-                        key=f"global_map_{sheet_name}_{module_name}_{field_name}",
-                    )
-
-            rows, rejected_rows = build_import_rows_from_mapping(
-                df_original=df_original,
-                cfg=cfg,
-                mapping=mapping,
-                validar_obligatorios=validar_obligatorios,
-            )
-            rows_by_module[module_name].extend(rows)
-            for rejected in rejected_rows:
-                rejected_all.append({"hoja": sheet_name, "modulo": module_name, **rejected})
-
-            st.markdown("**Previsualización convertida**")
-            if rows:
-                preview = pd.DataFrame(rows)
-                st.dataframe(preview.head(20), use_container_width=True, hide_index=True)
-                st.success(f"Filas listas desde esta hoja: {len(rows)}")
-                preview_blocks.append({"Hoja": sheet_name, "Módulo": module_name, "Filas listas": len(rows), "Filas rechazadas": len(rejected_rows)})
-            else:
-                st.warning("No hay filas listas para importar desde esta hoja con el mapeo actual.")
-
-    st.markdown("### 3) Resumen antes de importar")
-    if preview_blocks:
-        st.dataframe(pd.DataFrame(preview_blocks), use_container_width=True, hide_index=True)
-    else:
-        st.warning("No hay datos listos para importar.")
-
-    if rejected_all:
-        with st.expander(f"Filas rechazadas totales: {len(rejected_all)}"):
-            st.dataframe(pd.DataFrame(rejected_all), use_container_width=True, hide_index=True)
-
-    total_rows = sum(len(rows) for rows in rows_by_module.values())
-    affected_modules = [module for module, rows in rows_by_module.items() if rows]
-
-    st.markdown("### 4) Confirmar importación global")
-    st.write(f"Registros listos para importar: **{total_rows}**")
-    st.write("Módulos que se van a cargar: " + (", ".join(affected_modules) if affected_modules else "ninguno"))
-
-    confirm = st.checkbox("Confirmo importar el Excel global", key="confirm_global_import")
-
-    if st.button("Importar Excel global a todos los módulos asignados", type="primary", disabled=(not confirm or total_rows == 0)):
-        imported_summary = []
-        with connect() as conn:
-            if global_mode == "Reemplazar módulos asignados":
-                for module_name in affected_modules:
-                    conn.execute(f"DELETE FROM {MODULES[module_name]['table']}")
-                conn.commit()
-
-        for module_name in affected_modules:
-            table = MODULES[module_name]["table"]
-            count = bulk_insert_rows(table, rows_by_module[module_name])
-            imported_summary.append({"Módulo": module_name, "Registros importados": count})
-
-        st.success("Importación global completada.")
-        st.dataframe(pd.DataFrame(imported_summary), use_container_width=True, hide_index=True)
-        st.rerun()
-
 # =========================================================
 # VISTAS
 # =========================================================
@@ -1171,9 +923,14 @@ def render_dashboard() -> None:
                 pag = df["pagado"].apply(money).sum() if "pagado" in df.columns else 0
                 deuda += max(0, df["importe"].apply(money).sum() - pag)
         if "vencimiento" in df.columns:
-            venc = pd.to_datetime(df["vencimiento"], errors="coerce").dt.date
-            estado = df["estado"].astype(str).str.lower() if "estado" in df.columns else pd.Series([""] * len(df))
-            vencidos += int(((venc < date.today()) & (~estado.isin(["pagado", "cobrado", "realizado", "finalizada", "finalizado"]))).sum())
+            venc = pd.to_datetime(df["vencimiento"], errors="coerce")
+            estado = (
+                df["estado"].astype(str).str.lower()
+                if "estado" in df.columns
+                else pd.Series([""] * len(df), index=df.index)
+            )
+            estados_cerrados = ["pagado", "cobrado", "realizado", "finalizada", "finalizado", "anulado", "cancelado"]
+            vencidos += int(((venc < pd.Timestamp.today().normalize()) & (~estado.isin(estados_cerrados))).sum())
         if name == "Tareas Pendientes" and "estado" in df.columns:
             tareas_pend += int(df[~df["estado"].isin(["Finalizada", "Cancelada"])].shape[0])
 
@@ -1378,10 +1135,6 @@ def render_admin() -> None:
     if st.button("Inicializar / reparar tablas"):
         init_db()
         st.success("Tablas verificadas correctamente.")
-
-    st.divider()
-    render_global_excel_importer()
-    st.divider()
 
     st.subheader("Carga de datos de ejemplo")
     if st.button("Crear ejemplos mínimos"):
