@@ -981,13 +981,15 @@ def render_dashboard() -> None:
         if df.empty or "vencimiento" not in df.columns:
             continue
         temp = df.copy()
-        temp["vencimiento_dt"] = pd.to_datetime(temp["vencimiento"], errors="coerce").dt.date
+        temp["vencimiento_dt"] = pd.to_datetime(temp["vencimiento"], errors="coerce")
         temp = temp[temp["vencimiento_dt"].notna()]
-        temp = temp[(temp["vencimiento_dt"] >= date.today()) & (temp["vencimiento_dt"] <= date.today() + timedelta(days=30))]
+        hoy_ts = pd.Timestamp.today().normalize()
+        limite_ts = hoy_ts + pd.Timedelta(days=30)
+        temp = temp[(temp["vencimiento_dt"] >= hoy_ts) & (temp["vencimiento_dt"] <= limite_ts)]
         for _, row in temp.iterrows():
             venc_rows.append({
                 "Módulo": name,
-                "Vencimiento": row.get("vencimiento"),
+                "Vencimiento": row.get("vencimiento_dt").strftime("%Y-%m-%d") if pd.notna(row.get("vencimiento_dt")) else row.get("vencimiento"),
                 "Detalle": row.get("concepto") or row.get("detalle") or row.get("tarea") or row.get("acreedor") or "",
                 "Importe": row.get("importe") or row.get("saldo") or row.get("valor") or 0,
                 "Estado": row.get("estado", ""),
