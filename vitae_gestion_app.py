@@ -567,10 +567,25 @@ def add_balance_columns(df: pd.DataFrame) -> pd.DataFrame:
     if df.empty:
         return df
     df = df.copy()
+    if "ingreso" in df.columns:
+        df["ingreso"] = df["ingreso"].apply(money)
+    if "egreso" in df.columns:
+        df["egreso"] = df["egreso"].apply(money)
+    if "importe" in df.columns:
+        df["importe"] = df["importe"].apply(money)
+    if "pagado" in df.columns:
+        df["pagado"] = df["pagado"].apply(money)
+    if "cobrado" in df.columns:
+        df["cobrado"] = df["cobrado"].apply(money)
+    if "valor_pesos" in df.columns:
+        df["valor_pesos"] = df["valor_pesos"].apply(money)
+    if "valor_usd" in df.columns:
+        df["valor_usd"] = df["valor_usd"].apply(money)
+
     if "ingreso" in df.columns and "egreso" in df.columns:
-        df["saldo_movimiento"] = df["ingreso"].apply(money) - df["egreso"].apply(money)
+        df["saldo_movimiento"] = df["ingreso"] - df["egreso"]
     if "importe" in df.columns and "pagado" in df.columns:
-        df["saldo"] = df["importe"].apply(money) - df["pagado"].apply(money)
+        df["saldo"] = df["importe"] - df["pagado"]
     if "importe_total" in df.columns and "saldo" in df.columns:
         df["saldo"] = df["saldo"].apply(money)
     if "importe_original" in df.columns and "saldo" in df.columns:
@@ -578,9 +593,20 @@ def add_balance_columns(df: pd.DataFrame) -> pd.DataFrame:
     return df
 
 
+def first_available_date_col(df: pd.DataFrame, module_name: str) -> str | None:
+    if module_name in ["Facturación VMR", "Facturación VM"]:
+        for candidate in ["fecha_factura", "fecha", "vencimiento", "fecha_pago", "fecha_cobro"]:
+            if candidate in df.columns:
+                return candidate
+    for candidate in ["fecha", "vencimiento", "fecha_pago", "fecha_cobro", "proximo_vencimiento", "fecha_desde", "fecha_hasta"]:
+        if candidate in df.columns:
+            return candidate
+    return None
+
 def apply_filters(df: pd.DataFrame, module_name: str) -> pd.DataFrame:
     if df.empty:
         return df
+
     df = df.copy()
     st.subheader("Filtros")
     c1, c2, c3, c4 = st.columns(4)
@@ -590,21 +616,28 @@ def apply_filters(df: pd.DataFrame, module_name: str) -> pd.DataFrame:
     with c2:
         estado = "Todos"
         if "estado" in df.columns:
-            estados = ["Todos"] + sorted([x for x in df["estado"].dropna().unique().tolist() if x != ""])
-            estado = st.selectbox("Estado", estados, key=f"estado_{module_name}")
+            estados = [str(x).strip() for x in df["estado"].dropna().unique().tolist() if str(x).strip() != ""]
+            estado = st.selectbox("Estado", ["Todos"] + sorted(estados), key=f"estado_{module_name}")
     with c3:
-        fecha_desde = st.date_input("Desde", value=date.today() - timedelta(days=365), key=f"desde_{module_name}")
+        fecha_desde = st.date_input("Desde", value=date.today() - timedelta(days=3650), key=f"desde_{module_name}")
     with c4:
-        fecha_hasta = st.date_input("Hasta", value=date.today() + timedelta(days=365), key=f"hasta_{module_name}")
+        fecha_hasta = st.date_input("Hasta", value=date.today() + timedelta(days=3650), key=f"hasta_{module_name}")
 
     if search:
         mask = df.astype(str).apply(lambda col: col.str.contains(search, case=False, na=False)).any(axis=1)
         df = df[mask]
+
     if "estado" in df.columns and estado != "Todos":
-        df = df[df["estado"] == estado]
-    if "fecha" in df.columns:
-        f = pd.to_datetime(df["fecha"], errors="coerce").dt.date
-        df = df[(f >= fecha_desde) & (f <= fecha_hasta)]
+        df = df[df["estado"].astype(str).str.strip() == estado]
+
+    fecha_col = first_available_date_col(df, module_name)
+    if fecha_col:
+        fechas = pd.to_datetime(df[fecha_col], errors="coerce")
+        desde_ts = pd.Timestamp(fecha_desde)
+        hasta_ts = pd.Timestamp(fecha_hasta)
+        # Conserva filas sin fecha, así no desaparecen importaciones con fecha vacía.
+        df = df[fechas.isna() | ((fechas >= desde_ts) & (fechas <= hasta_ts))]
+
     return df
 
 # =========================================================
@@ -652,9 +685,11 @@ def render_dashboard() -> None:
                 pag = df["pagado"].apply(money).sum() if "pagado" in df.columns else 0
                 deuda += max(0, df["importe"].apply(money).sum() - pag)
         if "vencimiento" in df.columns:
-            venc = pd.to_datetime(df["vencimiento"], errors="coerce").dt.date
-            estado = df["estado"].astype(str).str.lower() if "estado" in df.columns else ""
-            vencidos += int(((venc < date.today()) & (~estado.isin(["pagado", "cobrado", "realizado", "finalizada", "finalizado"]))).sum())
+            venc = pd.to_datetime(df["vencimiento"], errors="coerce")
+            estado = df["estado"].astype(str).str.lower().str.strip() if "estado" in df.columns else pd.Series([""] * len(df), index=df.index)
+            hoy = pd.Timestamp.today().normalize()
+            cerrados = ["pagado", "cobrado", "completo", "realizado", "finalizada", "finalizado", "anulado", "cancelado"]
+            vencidos += int((venc.notna() & (venc < hoy) & (~estado.isin(cerrados))).sum())
         if name == "Tareas Pendientes" and "estado" in df.columns:
             tareas_pend += int(df[~df["estado"].isin(["Finalizada", "Cancelada"])].shape[0])
 
@@ -676,7 +711,7 @@ def render_dashboard() -> None:
     rows = []
     for name, df in dfs.items():
         cfg = MODULES[name]
-        total_importe = df["importe"].apply(money).sum() if "importe" in df.columns else 0
+        total_importe = df["importe"].apply(money).sum() if "importe" in df.columns else (df["valor_pesos"].apply(money).sum() if "valor_pesos" in df.columns else 0)
         total_saldo = df["saldo"].apply(money).sum() if "saldo" in df.columns else 0
         total_ing = df["ingreso"].apply(money).sum() if "ingreso" in df.columns else 0
         total_egr = df["egreso"].apply(money).sum() if "egreso" in df.columns else 0
@@ -770,6 +805,8 @@ def render_module(module_name: str) -> None:
                 m4.metric("Saldo", fmt_money(filtered["saldo"].apply(money).sum()))
             elif "importe" in filtered.columns:
                 m4.metric("Total importe", fmt_money(filtered["importe"].apply(money).sum()))
+            elif "valor_pesos" in filtered.columns:
+                m4.metric("Total facturado", fmt_money(filtered["valor_pesos"].apply(money).sum()))
 
             st.dataframe(filtered, use_container_width=True, hide_index=True)
 
