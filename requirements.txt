@@ -3,3 +3,4 @@ plotly
 ccxt
 pandas
 numpy
+openpyxl
