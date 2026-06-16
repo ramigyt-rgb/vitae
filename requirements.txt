@@ -1,7 +1,5 @@
 streamlit
 plotly
-ccxt
 pandas
-numpy
 openpyxl
 xlswriter
