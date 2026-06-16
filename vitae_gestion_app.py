@@ -18,7 +18,7 @@ import streamlit as st
 # CONFIG GENERAL
 # =========================================================
 
-APP_TITLE = "VITAE | Sistema Integral de Gestión | FACTURACION FILTROS OK"
+APP_TITLE = "VITAE | Sistema Integral de Gestión"
 DB_PATH = Path("vitae_gestion.db")
 DATE_FMT = "%Y-%m-%d"
 
@@ -56,6 +56,11 @@ st.markdown(
 # =========================================================
 # DEFINICIÓN DE MÓDULOS
 # =========================================================
+# Cada módulo tiene:
+# - tabla: nombre interno sqlite
+# - empresa: VMR / VM / VITAE
+# - tipo: flujo, cuenta_corriente, facturacion, deuda, etc.
+# - campos: columnas editables por el usuario
 
 MODULES: Dict[str, Dict[str, Any]] = {
     "Caja VMR": {
@@ -111,20 +116,16 @@ MODULES: Dict[str, Dict[str, Any]] = {
         "table": "facturacion_vmr",
         "empresa": "VMR",
         "tipo": "facturacion",
-        "descripcion": "Control de facturación de procedimientos/pacientes de VMR según planilla quirófano.",
+        "descripcion": "Facturas emitidas, cobradas y pendientes de VMR.",
         "fields": [
-            ("mes", "text", True),
-            ("afiliado", "text", True),
-            ("obra_social", "text", True),
-            ("procedimiento", "text", True),
-            ("medico_responsable", "text", True),
-            ("fecha_factura", "date", False),
-            ("numero_factura", "text", False),
-            ("vencimiento", "date", False),
-            ("fecha_pago", "date", False),
-            ("valor_pesos", "money", True),
-            ("valor_usd", "money", False),
-            ("estado", "select", True, ["Pendiente", "Completo", "Parcial", "Vencido", "Anulado"]),
+            ("fecha", "date", True),
+            ("cliente", "text", True),
+            ("comprobante", "text", False),
+            ("concepto", "text", True),
+            ("importe", "money", True),
+            ("cobrado", "money", False),
+            ("fecha_cobro", "date", False),
+            ("estado", "select", True, ["Pendiente", "Parcial", "Cobrado", "Anulado"]),
             ("observaciones", "textarea", False),
         ],
     },
@@ -181,20 +182,16 @@ MODULES: Dict[str, Dict[str, Any]] = {
         "table": "facturacion_vm",
         "empresa": "VM",
         "tipo": "facturacion",
-        "descripcion": "Control de facturación de procedimientos/pacientes de Vitae Medical según planilla quirófano.",
+        "descripcion": "Facturas emitidas, cobradas y pendientes de VM.",
         "fields": [
-            ("mes", "text", True),
-            ("afiliado", "text", True),
-            ("obra_social", "text", True),
-            ("procedimiento", "text", True),
-            ("medico_responsable", "text", True),
-            ("fecha_factura", "date", False),
-            ("numero_factura", "text", False),
-            ("vencimiento", "date", False),
-            ("fecha_pago", "date", False),
-            ("valor_pesos", "money", True),
-            ("valor_usd", "money", False),
-            ("estado", "select", True, ["Pendiente", "Completo", "Parcial", "Vencido", "Anulado"]),
+            ("fecha", "date", True),
+            ("cliente", "text", True),
+            ("comprobante", "text", False),
+            ("concepto", "text", True),
+            ("importe", "money", True),
+            ("cobrado", "money", False),
+            ("fecha_cobro", "date", False),
+            ("estado", "select", True, ["Pendiente", "Parcial", "Cobrado", "Anulado"]),
             ("observaciones", "textarea", False),
         ],
     },
@@ -431,25 +428,13 @@ def sql_type(field_type: str) -> str:
 
 
 def init_db() -> None:
-    """Crea tablas y agrega automáticamente columnas nuevas si el módulo cambió.
-
-    Esto permite actualizar Facturación VMR/VM sin tener que borrar la base cada vez.
-    SQLite no elimina columnas viejas automáticamente, pero la app muestra/exporta solo las columnas del módulo actual.
-    """
     with connect() as conn:
         for cfg in MODULES.values():
-            table = cfg["table"]
             columns = ["id INTEGER PRIMARY KEY AUTOINCREMENT", "created_at TEXT", "updated_at TEXT"]
             for field in cfg["fields"]:
                 name, ftype = field[0], field[1]
                 columns.append(f"{name} {sql_type(ftype)}")
-            conn.execute(f"CREATE TABLE IF NOT EXISTS {table} ({', '.join(columns)})")
-
-            existing_cols = [row[1] for row in conn.execute(f"PRAGMA table_info({table})").fetchall()]
-            for field in cfg["fields"]:
-                name, ftype = field[0], field[1]
-                if name not in existing_cols:
-                    conn.execute(f"ALTER TABLE {table} ADD COLUMN {name} {sql_type(ftype)}")
+            conn.execute(f"CREATE TABLE IF NOT EXISTS {cfg['table']} ({', '.join(columns)})")
         conn.commit()
 
 
@@ -471,28 +456,6 @@ def insert_row(table: str, data: Dict[str, Any]) -> None:
     with connect() as conn:
         conn.execute(sql, [data[c] for c in cols])
         conn.commit()
-
-
-def bulk_insert_rows(table: str, rows: List[Dict[str, Any]]) -> int:
-    if not rows:
-        return 0
-    now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    clean_rows = [{**row, "created_at": now, "updated_at": now} for row in rows]
-    cols = list(clean_rows[0].keys())
-    placeholders = ", ".join(["?"] * len(cols))
-    sql = f"INSERT INTO {table} ({', '.join(cols)}) VALUES ({placeholders})"
-    values = [[row.get(c, "") for c in cols] for row in clean_rows]
-    with connect() as conn:
-        conn.executemany(sql, values)
-        conn.commit()
-    return len(clean_rows)
-
-
-def replace_table_rows(table: str, rows: List[Dict[str, Any]]) -> int:
-    with connect() as conn:
-        conn.execute(f"DELETE FROM {table}")
-        conn.commit()
-    return bulk_insert_rows(table, rows)
 
 
 def update_row(table: str, row_id: int, data: Dict[str, Any]) -> None:
@@ -517,8 +480,6 @@ def money(value: Any) -> float:
     try:
         if pd.isna(value) or value == "":
             return 0.0
-        if isinstance(value, str):
-            value = normalize_money_string(value)
         return float(value)
     except Exception:
         return 0.0
@@ -528,75 +489,16 @@ def fmt_money(value: Any) -> str:
     return f"$ {money(value):,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
 
 
-TECH_COLUMNS = ["id", "created_at", "updated_at"]
-
-
-def business_df(df: pd.DataFrame) -> pd.DataFrame:
-    """Oculta columnas técnicas para que el usuario vea solo la gestión real."""
-    if df is None or df.empty:
-        return df
-    cols = [c for c in df.columns if c not in TECH_COLUMNS]
-    return df[cols].copy()
-
-
-def module_business_df(df: pd.DataFrame, cfg: Dict[str, Any]) -> pd.DataFrame:
-    """Muestra solo las columnas vigentes del módulo y cálculos útiles.
-
-    Esto evita que queden visibles columnas viejas si el esquema cambió, por ejemplo
-    cliente/importe/cobrado antiguos de Facturación.
-    """
-    if df is None or df.empty:
-        return df
-    field_names = get_field_names(cfg)
-    calc_cols = ["saldo", "saldo_movimiento"]
-    cols = [c for c in field_names + calc_cols if c in df.columns]
-    return df[cols].copy()
-
-
-def show_module_table(df: pd.DataFrame, cfg: Dict[str, Any], **kwargs: Any) -> None:
-    st.dataframe(module_business_df(df, cfg), use_container_width=True, hide_index=True, **kwargs)
-
-
-def show_business_table(df: pd.DataFrame, **kwargs: Any) -> None:
-    st.dataframe(business_df(df), use_container_width=True, hide_index=True, **kwargs)
-
-
-def get_field_names(cfg: Dict[str, Any]) -> List[str]:
-    return [field[0] for field in cfg["fields"]]
-
-
 def parse_date(value: Any) -> date | None:
-    """Parsea fechas de Excel/CSV de forma segura.
-
-    Devuelve None cuando la celda está vacía, contiene NaT, texto inválido
-    o cualquier valor que Pandas no pueda convertir. Esto evita errores al
-    importar planillas con fecha_pago/vencimiento vacíos.
-    """
-    if value is None:
+    if value in (None, "", pd.NaT):
         return None
-
     try:
-        if pd.isna(value):
-            return None
-    except Exception:
-        pass
-
-    if isinstance(value, str) and value.strip() == "":
-        return None
-
-    try:
-        parsed = pd.to_datetime(value, dayfirst=True, errors="coerce")
-        if pd.isna(parsed):
-            return None
-        return parsed.date()
+        return pd.to_datetime(value).date()
     except Exception:
         return None
 
 
 def clean_for_db(value: Any, ftype: str) -> Any:
-    if ftype == "date":
-        parsed = parse_date(value)
-        return parsed.strftime(DATE_FMT) if parsed else ""
     if isinstance(value, date):
         return value.strftime(DATE_FMT)
     if ftype == "bool":
@@ -631,8 +533,6 @@ def input_field(field: Tuple, prefix: str, existing: Dict[str, Any] | None = Non
 
     if ftype == "date":
         value = parse_date(old) if old else date.today()
-        if value is None:
-            value = date.today()
         return st.date_input(label, value=value, key=key)
     if ftype == "money":
         return st.number_input(label, min_value=0.0, step=1000.0, value=money(old), key=key)
@@ -671,10 +571,6 @@ def add_balance_columns(df: pd.DataFrame) -> pd.DataFrame:
         df["saldo_movimiento"] = df["ingreso"].apply(money) - df["egreso"].apply(money)
     if "importe" in df.columns and "pagado" in df.columns:
         df["saldo"] = df["importe"].apply(money) - df["pagado"].apply(money)
-    if "valor_pesos" in df.columns:
-        df["valor_pesos"] = df["valor_pesos"].apply(money)
-    if "valor_usd" in df.columns:
-        df["valor_usd"] = df["valor_usd"].apply(money)
     if "importe_total" in df.columns and "saldo" in df.columns:
         df["saldo"] = df["saldo"].apply(money)
     if "importe_original" in df.columns and "saldo" in df.columns:
@@ -683,402 +579,33 @@ def add_balance_columns(df: pd.DataFrame) -> pd.DataFrame:
 
 
 def apply_filters(df: pd.DataFrame, module_name: str) -> pd.DataFrame:
-    """Filtros seguros para todos los módulos.
-
-    Corrige el problema de comparar fechas tipo datetime.date contra Series
-    con dtype datetime64, y soporta módulos que no tienen columna `fecha`,
-    como Facturación VMR/VM, que usan `fecha_factura`.
-    """
     if df.empty:
         return df
-
     df = df.copy()
     st.subheader("Filtros")
     c1, c2, c3, c4 = st.columns(4)
 
     with c1:
         search = st.text_input("Buscar texto", key=f"search_{module_name}")
-
     with c2:
         estado = "Todos"
         if "estado" in df.columns:
-            estados = [
-                str(x).strip()
-                for x in df["estado"].dropna().unique().tolist()
-                if str(x).strip() != ""
-            ]
-            estado = st.selectbox("Estado", ["Todos"] + sorted(estados), key=f"estado_{module_name}")
-
+            estados = ["Todos"] + sorted([x for x in df["estado"].dropna().unique().tolist() if x != ""])
+            estado = st.selectbox("Estado", estados, key=f"estado_{module_name}")
     with c3:
-        fecha_desde = st.date_input(
-            "Desde",
-            value=date.today() - timedelta(days=365),
-            key=f"desde_{module_name}",
-        )
-
+        fecha_desde = st.date_input("Desde", value=date.today() - timedelta(days=365), key=f"desde_{module_name}")
     with c4:
-        fecha_hasta = st.date_input(
-            "Hasta",
-            value=date.today() + timedelta(days=365),
-            key=f"hasta_{module_name}",
-        )
+        fecha_hasta = st.date_input("Hasta", value=date.today() + timedelta(days=365), key=f"hasta_{module_name}")
 
     if search:
-        mask = df.astype(str).apply(
-            lambda col: col.str.contains(search, case=False, na=False)
-        ).any(axis=1)
+        mask = df.astype(str).apply(lambda col: col.str.contains(search, case=False, na=False)).any(axis=1)
         df = df[mask]
-
     if "estado" in df.columns and estado != "Todos":
-        df = df[df["estado"].astype(str).str.strip() == estado]
-
-    # Elegimos la mejor columna de fecha disponible para filtrar.
-    # IMPORTANTE: SQLite conserva columnas viejas. En Facturación pueden existir
-    # columnas antiguas como `fecha`, pero la columna correcta actual es `fecha_factura`.
-    if module_name in ["Facturación VMR", "Facturación VM"] and "fecha_factura" in df.columns:
-        fecha_col = "fecha_factura"
-    else:
-        fecha_col = None
-        for candidate in ["fecha", "vencimiento", "fecha_pago", "proximo_vencimiento", "fecha_desde", "fecha_hasta"]:
-            if candidate in df.columns:
-                fecha_col = candidate
-                break
-
-    if fecha_col:
-        fechas = pd.to_datetime(df[fecha_col], errors="coerce")
-        desde_ts = pd.Timestamp(fecha_desde)
-        hasta_ts = pd.Timestamp(fecha_hasta)
-
-        # Mantiene solo filas con fecha válida dentro del rango.
-        # Si una fila no tiene fecha, no rompe la app; simplemente no entra al filtro de fechas.
-        df = df[fechas.notna() & (fechas >= desde_ts) & (fechas <= hasta_ts)]
-
+        df = df[df["estado"] == estado]
+    if "fecha" in df.columns:
+        f = pd.to_datetime(df["fecha"], errors="coerce").dt.date
+        df = df[(f >= fecha_desde) & (f <= fecha_hasta)]
     return df
-
-# =========================================================
-# IMPORTADOR PROFESIONAL EXCEL / CSV
-# =========================================================
-
-def normalize_money_string(value: Any) -> str:
-    """Convierte formatos argentinos $ 1.234.567,89 o 1234567.89 a string numérico válido."""
-    if value is None or pd.isna(value):
-        return "0"
-    text = str(value).strip()
-    if text == "":
-        return "0"
-    text = text.replace("$", "").replace("ARS", "").replace("USD", "")
-    text = text.replace(" ", "").replace("\u00a0", "")
-    text = text.replace("(", "-").replace(")", "")
-
-    if "," in text and "." in text:
-        # Formato AR: 1.234,56
-        if text.rfind(",") > text.rfind("."):
-            text = text.replace(".", "").replace(",", ".")
-        # Formato US: 1,234.56
-        else:
-            text = text.replace(",", "")
-    elif "," in text:
-        text = text.replace(".", "").replace(",", ".")
-    return text
-
-
-def clean_tabular_sheet(df_raw: pd.DataFrame) -> pd.DataFrame:
-    """Detecta encabezados aunque la planilla tenga títulos arriba o filas combinadas.
-
-    Ejemplo: una hoja con título "CONTROL PROCEDIMIENTOS..." y encabezados en la fila 4
-    se convierte automáticamente en una tabla con columnas MES, AFILIADO, OBRA SOCIAL, etc.
-    """
-    if df_raw.empty:
-        return df_raw
-
-    raw = df_raw.copy().dropna(how="all").dropna(axis=1, how="all")
-    if raw.empty:
-        return raw
-
-    header_keywords = {
-        "mes", "afiliado", "obra social", "procedimiento", "medico", "médico",
-        "fecha factura", "factura", "vencimiento", "fecha pago", "valor", "estado",
-        "cliente", "paciente", "importe", "concepto"
-    }
-
-    best_idx = raw.index[0]
-    best_score = -1
-    for idx, row in raw.iterrows():
-        values = [str(x).strip().lower() for x in row.tolist() if pd.notna(x) and str(x).strip() != ""]
-        if not values:
-            continue
-        joined_values = " | ".join(values)
-        score = sum(1 for kw in header_keywords if kw in joined_values)
-        score += min(len(values), 8) * 0.05
-        if score > best_score:
-            best_score = score
-            best_idx = idx
-
-    header_values = raw.loc[best_idx].tolist()
-    columns = []
-    used: Dict[str, int] = {}
-    for i, value in enumerate(header_values):
-        name = str(value).strip() if pd.notna(value) and str(value).strip() else f"Columna_{i+1}"
-        name = name.replace("\n", " ").replace("  ", " ").strip()
-        if name in used:
-            used[name] += 1
-            name = f"{name}_{used[name]}"
-        else:
-            used[name] = 1
-        columns.append(name)
-
-    cleaned = raw.loc[raw.index > best_idx].copy()
-    cleaned.columns = columns
-    cleaned = cleaned.dropna(how="all")
-    cleaned = cleaned.loc[:, [not str(c).lower().startswith("columna_") or not cleaned[c].isna().all() for c in cleaned.columns]]
-    return cleaned.reset_index(drop=True)
-
-
-def read_uploaded_sheet(uploaded_file: Any) -> Dict[str, pd.DataFrame]:
-    """Devuelve un diccionario hoja -> dataframe. Soporta CSV y Excel con múltiples hojas."""
-    filename = uploaded_file.name.lower()
-    if filename.endswith(".csv"):
-        try:
-            raw = pd.read_csv(uploaded_file, sep=None, engine="python", header=None)
-        except Exception:
-            uploaded_file.seek(0)
-            raw = pd.read_csv(uploaded_file, header=None)
-        return {"CSV": clean_tabular_sheet(raw)}
-
-    raw_sheets = pd.read_excel(uploaded_file, sheet_name=None, header=None)
-    return {name: clean_tabular_sheet(df) for name, df in raw_sheets.items()}
-
-def field_label(field: Tuple) -> str:
-    name, ftype, required = field[0], field[1], field[2]
-    req = " *" if required else ""
-    return f"{name.replace('_', ' ').title()}{req}"
-
-
-def auto_guess_column(target_name: str, source_columns: List[str]) -> str:
-    norm_target = target_name.lower().replace("_", " ")
-    aliases = {
-        "fecha": ["fecha", "dia", "día", "date"],
-        "mes": ["mes", "periodo", "período"],
-        "afiliado": ["afiliado", "paciente", "cliente", "nombre", "apellido y nombre"],
-        "medico_responsable": ["medico responsable", "médico responsable", "medico", "médico", "doctor", "profesional", "responsable"],
-        "fecha_factura": ["fecha factura", "fecha de factura", "fecha", "factura fecha"],
-        "numero_factura": ["n° factura", "nº factura", "n factura", "numero factura", "número factura", "factura", "comprobante"],
-        "fecha_pago": ["fecha pago", "fecha de pago", "pago fecha"],
-        "valor_pesos": ["valor $", "valor pesos", "valor ars", "importe", "monto", "total", "valor"],
-        "valor_usd": ["valor usd", "usd", "dolares", "dólares"],
-        "concepto": ["concepto", "detalle", "descripcion", "descripción", "movimiento", "observacion"],
-        "detalle": ["detalle", "concepto", "descripcion", "descripción"],
-        "descripcion": ["descripcion", "descripción", "detalle", "concepto"],
-        "cliente": ["cliente", "paciente", "nombre", "razon social", "razón social"],
-        "paciente": ["paciente", "cliente", "nombre"],
-        "persona_entidad": ["persona", "entidad", "cliente", "proveedor", "paciente", "nombre"],
-        "proveedor": ["proveedor", "acreedor", "contraparte", "entidad"],
-        "acreedor": ["acreedor", "proveedor", "banco", "entidad"],
-        "contraparte": ["contraparte", "proveedor", "profesional", "locador"],
-        "medico": ["medico", "médico", "doctor", "profesional"],
-        "importe": ["importe", "monto", "total", "valor", "debe", "saldo"],
-        "importe_total": ["importe total", "total", "monto", "importe"],
-        "importe_original": ["importe original", "deuda", "total", "importe", "monto"],
-        "valor": ["valor", "importe", "monto", "total"],
-        "valor_mensual": ["valor mensual", "alquiler", "importe", "monto", "total"],
-        "ingreso": ["ingreso", "entradas", "haber", "credito", "crédito", "cobro"],
-        "egreso": ["egreso", "salidas", "debe", "debito", "débito", "pago"],
-        "pagado": ["pagado", "pago", "abonado", "cancelado"],
-        "cobrado": ["cobrado", "cobro", "pagado", "abonado"],
-        "saldo": ["saldo", "pendiente", "resta", "deuda"],
-        "estado": ["estado", "situacion", "situación", "status"],
-        "vencimiento": ["vencimiento", "vence", "fecha vencimiento"],
-        "proximo_vencimiento": ["proximo vencimiento", "próximo vencimiento", "vencimiento", "vence"],
-        "observaciones": ["observaciones", "observacion", "obs", "nota", "comentario"],
-        "responsable": ["responsable", "usuario", "encargado"],
-        "dni": ["dni", "documento"],
-        "telefono": ["telefono", "teléfono", "celular", "whatsapp"],
-        "obra_social": ["obra social", "os", "prepaga"],
-        "practica": ["practica", "práctica", "prestacion", "prestación", "procedimiento"],
-        "procedimiento": ["procedimiento", "practica", "práctica", "prestacion", "prestación"],
-        "periodo": ["periodo", "período", "mes"],
-    }
-    candidates = aliases.get(target_name, [norm_target])
-    normalized_sources = {str(col).lower().replace("_", " ").strip(): col for col in source_columns}
-    for cand in candidates:
-        cand = cand.lower().strip()
-        if cand in normalized_sources:
-            return normalized_sources[cand]
-    for cand in candidates:
-        cand = cand.lower().strip()
-        for src_norm, original in normalized_sources.items():
-            if cand in src_norm or src_norm in cand:
-                return original
-    return "No usar"
-
-
-def normalize_select_value(value: Any, options: List[str]) -> str:
-    if value is None or pd.isna(value) or str(value).strip() == "":
-        return options[0] if options else ""
-    text = str(value).strip()
-    for opt in options:
-        if text.lower() == opt.lower():
-            return opt
-    text_low = text.lower()
-    aliases = {
-        "si": "Sí", "sí": "Sí", "true": "Sí", "no": "No", "false": "No",
-        "cobrado": "Cobrado", "pagado": "Pagado", "pendiente": "Pendiente", "vencido": "Vencido",
-        "parcial": "Parcial", "completo": "Completo", "completa": "Completo", "activo": "Activo", "finalizado": "Finalizado",
-        "alta": "Alta", "media": "Media", "baja": "Baja",
-        "credito": "Crédito", "crédito": "Crédito", "debito": "Débito", "débito": "Débito",
-    }
-    wanted = aliases.get(text_low)
-    if wanted and wanted in options:
-        return wanted
-    return options[0] if options else text
-
-
-def clean_import_value(value: Any, field: Tuple) -> Any:
-    name, ftype = field[0], field[1]
-    options = field[3] if len(field) > 3 else None
-
-    if ftype == "date":
-        parsed = parse_date(value)
-        if parsed is None:
-            return ""
-        try:
-            return parsed.strftime(DATE_FMT)
-        except Exception:
-            return ""
-    if ftype in {"money", "number"}:
-        num = pd.to_numeric(normalize_money_string(value), errors="coerce")
-        return 0.0 if pd.isna(num) else float(num)
-    if ftype == "int":
-        num = pd.to_numeric(normalize_money_string(value), errors="coerce")
-        return 0 if pd.isna(num) else int(num)
-    if ftype == "bool":
-        if value is None or pd.isna(value):
-            return 0
-        return 1 if str(value).strip().lower() in ["1", "true", "si", "sí", "x", "ok", "pagado", "conciliado"] else 0
-    if ftype == "select":
-        return normalize_select_value(value, options or [])
-    if value is None or pd.isna(value):
-        return ""
-    return str(value).strip()
-
-
-def render_importer(module_name: str, cfg: Dict[str, Any]) -> None:
-    table = cfg["table"]
-    st.subheader("Importar planilla Excel / CSV")
-    st.caption("Subí una planilla, elegí la hoja, mapeá las columnas y guardala dentro de este módulo. No hace falta que todas tus planillas tengan el mismo formato.")
-
-    uploaded_file = st.file_uploader(
-        "Subir archivo",
-        type=["xlsx", "xls", "csv"],
-        key=f"upload_{table}",
-    )
-
-    if uploaded_file is None:
-        st.info("Acepta Excel con varias hojas o CSV. Primero subí el archivo y después asignás cada columna.")
-        return
-
-    try:
-        sheets = read_uploaded_sheet(uploaded_file)
-    except Exception as e:
-        st.error(f"No pude leer el archivo. Revisá que sea Excel/CSV válido. Detalle: {e}")
-        return
-
-    sheet_names = list(sheets.keys())
-    selected_sheet = st.selectbox("Hoja a importar", sheet_names, key=f"sheet_{table}")
-    df_original = sheets[selected_sheet].copy()
-    df_original = df_original.dropna(how="all")
-    df_original.columns = [str(c).strip() for c in df_original.columns]
-
-    if df_original.empty:
-        st.warning("La hoja seleccionada está vacía.")
-        return
-
-    st.markdown("#### Vista previa")
-    show_business_table(df_original.head(30))
-
-    columnas = df_original.columns.tolist()
-    st.markdown("#### Mapeo de columnas")
-    st.caption("La app intenta detectar columnas automáticamente. Corregí lo que haga falta. Los campos con * son recomendados para que el módulo quede bien cargado.")
-
-    mapping: Dict[str, str] = {}
-    cols = st.columns(2)
-    for i, field in enumerate(cfg["fields"]):
-        name = field[0]
-        guessed = auto_guess_column(name, columnas)
-        options = ["No usar"] + columnas
-        index = options.index(guessed) if guessed in options else 0
-        with cols[i % 2]:
-            mapping[name] = st.selectbox(
-                field_label(field),
-                options,
-                index=index,
-                key=f"map_{table}_{name}",
-            )
-
-    with st.expander("Opciones avanzadas"):
-        modo = st.radio(
-            "Modo de importación",
-            ["Agregar a registros existentes", "Reemplazar módulo completo"],
-            key=f"modo_import_{table}",
-        )
-        saltar_filas_vacias = st.checkbox("Saltar filas completamente vacías", value=True, key=f"skip_empty_{table}")
-        validar_obligatorios = st.checkbox("Validar campos obligatorios", value=False, key=f"valid_required_{table}")
-        st.caption("Si activás validar obligatorios, la app no importará filas que no tengan los campos obligatorios del módulo.")
-
-    rows: List[Dict[str, Any]] = []
-    rejected_rows: List[Dict[str, Any]] = []
-
-    for idx, source_row in df_original.iterrows():
-        if saltar_filas_vacias and source_row.isna().all():
-            continue
-        new_row: Dict[str, Any] = {}
-        for field in cfg["fields"]:
-            name = field[0]
-            mapped_col = mapping.get(name, "No usar")
-            if mapped_col == "No usar":
-                new_row[name] = clean_for_db(default_value(field[1], field[3] if len(field) > 3 else None), field[1])
-                if field[1] == "date" and not field[2]:
-                    new_row[name] = ""
-            else:
-                new_row[name] = clean_import_value(source_row.get(mapped_col), field)
-
-        errors = validate_required(cfg, new_row) if validar_obligatorios else []
-        if errors:
-            rejected_rows.append({"fila_excel": idx + 2, "motivo": ", ".join(errors), **new_row})
-        else:
-            rows.append(new_row)
-
-    st.markdown("#### Previsualización final")
-    preview_df = pd.DataFrame(rows)
-    if preview_df.empty:
-        st.warning("No hay filas válidas para importar con el mapeo actual.")
-    else:
-        show_business_table(preview_df.head(50))
-        st.success(f"Filas listas para importar: {len(rows)}")
-        missing_core = []
-        for core in ["importe", "cobrado", "cliente", "concepto", "fecha"]:
-            if core in mapping and mapping.get(core) == "No usar":
-                missing_core.append(core)
-        if missing_core:
-            st.warning("Atención: estos campos importantes quedaron en 'No usar': " + ", ".join(missing_core) + ". Si no los mapeás, entrarán vacíos o en cero.")
-
-    if rejected_rows:
-        with st.expander(f"Filas rechazadas: {len(rejected_rows)}"):
-            show_business_table(pd.DataFrame(rejected_rows))
-
-    col_a, col_b = st.columns([1, 2])
-    with col_a:
-        confirm_import = st.checkbox("Confirmo la importación", key=f"confirm_import_{table}")
-    with col_b:
-        st.caption("Revisá la previsualización antes de confirmar. Si reemplazás el módulo completo, se borran los registros anteriores de este módulo.")
-
-    if st.button("Importar planilla al módulo", type="primary", disabled=(not confirm_import or not rows), key=f"btn_import_{table}"):
-        if modo == "Reemplazar módulo completo":
-            count = replace_table_rows(table, rows)
-        else:
-            count = bulk_insert_rows(table, rows)
-        st.success(f"Importación completada. Registros importados en {module_name}: {count}")
-        st.rerun()
 
 # =========================================================
 # VISTAS
@@ -1114,12 +641,7 @@ def render_dashboard() -> None:
             ingresos += df["ingreso"].apply(money).sum()
         if "egreso" in df.columns:
             egresos += df["egreso"].apply(money).sum()
-        if name in ["Facturación VMR", "Facturación VM"] and "valor_pesos" in df.columns:
-            total_facturado = df["valor_pesos"].apply(money).sum()
-            cobrado_estimado = df[df.get("estado", "").astype(str).str.lower().isin(["completo", "cobrado", "pagado"])]["valor_pesos"].apply(money).sum() if "estado" in df.columns else 0
-            ingresos += cobrado_estimado
-            a_cobrar += max(0, total_facturado - cobrado_estimado)
-        elif "importe" in df.columns and name in ["Gine Vitae"]:
+        if "importe" in df.columns and name in ["Facturación VMR", "Facturación VM", "Gine Vitae"]:
             cob = df["cobrado"].apply(money).sum() if "cobrado" in df.columns else 0
             ingresos += cob
             a_cobrar += max(0, df["importe"].apply(money).sum() - cob)
@@ -1130,14 +652,9 @@ def render_dashboard() -> None:
                 pag = df["pagado"].apply(money).sum() if "pagado" in df.columns else 0
                 deuda += max(0, df["importe"].apply(money).sum() - pag)
         if "vencimiento" in df.columns:
-            venc = pd.to_datetime(df["vencimiento"], errors="coerce")
-            estado = (
-                df["estado"].astype(str).str.lower()
-                if "estado" in df.columns
-                else pd.Series([""] * len(df), index=df.index)
-            )
-            estados_cerrados = ["pagado", "cobrado", "realizado", "finalizada", "finalizado", "anulado", "cancelado"]
-            vencidos += int(((venc < pd.Timestamp.today().normalize()) & (~estado.isin(estados_cerrados))).sum())
+            venc = pd.to_datetime(df["vencimiento"], errors="coerce").dt.date
+            estado = df["estado"].astype(str).str.lower() if "estado" in df.columns else ""
+            vencidos += int(((venc < date.today()) & (~estado.isin(["pagado", "cobrado", "realizado", "finalizada", "finalizado"]))).sum())
         if name == "Tareas Pendientes" and "estado" in df.columns:
             tareas_pend += int(df[~df["estado"].isin(["Finalizada", "Cancelada"])].shape[0])
 
@@ -1159,7 +676,7 @@ def render_dashboard() -> None:
     rows = []
     for name, df in dfs.items():
         cfg = MODULES[name]
-        total_importe = df["importe"].apply(money).sum() if "importe" in df.columns else (df["valor_pesos"].apply(money).sum() if "valor_pesos" in df.columns else 0)
+        total_importe = df["importe"].apply(money).sum() if "importe" in df.columns else 0
         total_saldo = df["saldo"].apply(money).sum() if "saldo" in df.columns else 0
         total_ing = df["ingreso"].apply(money).sum() if "ingreso" in df.columns else 0
         total_egr = df["egreso"].apply(money).sum() if "egreso" in df.columns else 0
@@ -1174,7 +691,7 @@ def render_dashboard() -> None:
         })
     summary = pd.DataFrame(rows)
     st.subheader("Resumen por módulo")
-    show_business_table(summary)
+    st.dataframe(summary, use_container_width=True, hide_index=True)
 
     chart_df = summary[summary["Registros"] > 0]
     if not chart_df.empty:
@@ -1188,24 +705,22 @@ def render_dashboard() -> None:
         if df.empty or "vencimiento" not in df.columns:
             continue
         temp = df.copy()
-        temp["vencimiento_dt"] = pd.to_datetime(temp["vencimiento"], errors="coerce")
+        temp["vencimiento_dt"] = pd.to_datetime(temp["vencimiento"], errors="coerce").dt.date
         temp = temp[temp["vencimiento_dt"].notna()]
-        hoy_ts = pd.Timestamp.today().normalize()
-        limite_ts = hoy_ts + pd.Timedelta(days=30)
-        temp = temp[(temp["vencimiento_dt"] >= hoy_ts) & (temp["vencimiento_dt"] <= limite_ts)]
+        temp = temp[(temp["vencimiento_dt"] >= date.today()) & (temp["vencimiento_dt"] <= date.today() + timedelta(days=30))]
         for _, row in temp.iterrows():
             venc_rows.append({
                 "Módulo": name,
-                "Vencimiento": row.get("vencimiento_dt").strftime("%Y-%m-%d") if pd.notna(row.get("vencimiento_dt")) else row.get("vencimiento"),
-                "Detalle": row.get("concepto") or row.get("detalle") or row.get("tarea") or row.get("acreedor") or row.get("afiliado") or row.get("procedimiento") or "",
-                "Importe": row.get("importe") or row.get("saldo") or row.get("valor") or row.get("valor_pesos") or 0,
+                "Vencimiento": row.get("vencimiento"),
+                "Detalle": row.get("concepto") or row.get("detalle") or row.get("tarea") or row.get("acreedor") or "",
+                "Importe": row.get("importe") or row.get("saldo") or row.get("valor") or 0,
                 "Estado": row.get("estado", ""),
             })
     venc_df = pd.DataFrame(venc_rows)
     if venc_df.empty:
         st.success("No hay vencimientos cargados para los próximos 30 días.")
     else:
-        show_business_table(venc_df.sort_values("Vencimiento"))
+        st.dataframe(venc_df.sort_values("Vencimiento"), use_container_width=True, hide_index=True)
 
 
 def render_module(module_name: str) -> None:
@@ -1215,7 +730,7 @@ def render_module(module_name: str) -> None:
     st.header(module_name)
     st.caption(cfg["descripcion"])
 
-    tab1, tab2, tab3, tab4, tab5 = st.tabs(["➕ Cargar", "📥 Importar planilla", "📋 Registros", "✏️ Editar / Eliminar", "📤 Exportar"])
+    tab1, tab2, tab3, tab4 = st.tabs(["➕ Cargar", "📋 Registros", "✏️ Editar / Eliminar", "📤 Exportar"])
 
     with tab1:
         st.subheader("Nuevo registro")
@@ -1237,9 +752,6 @@ def render_module(module_name: str) -> None:
                     st.rerun()
 
     with tab2:
-        render_importer(module_name, cfg)
-
-    with tab3:
         df = add_balance_columns(get_df(table))
         if df.empty:
             st.warning("Todavía no hay registros cargados en este módulo.")
@@ -1258,20 +770,12 @@ def render_module(module_name: str) -> None:
                 m4.metric("Saldo", fmt_money(filtered["saldo"].apply(money).sum()))
             elif "importe" in filtered.columns:
                 m4.metric("Total importe", fmt_money(filtered["importe"].apply(money).sum()))
-            elif "valor_pesos" in filtered.columns:
-                m4.metric("Total facturado", fmt_money(filtered["valor_pesos"].apply(money).sum()))
 
-            show_module_table(filtered, cfg)
+            st.dataframe(filtered, use_container_width=True, hide_index=True)
 
-            if module_name in ["Facturación VMR", "Facturación VM"] and "fecha_factura" in filtered.columns:
-                fecha_col = "fecha_factura"
-            elif "fecha" in filtered.columns:
-                fecha_col = "fecha"
-            else:
-                fecha_col = None
-            if fecha_col and not filtered.empty:
+            if "fecha" in filtered.columns and not filtered.empty:
                 graph = filtered.copy()
-                graph[fecha_col] = pd.to_datetime(graph[fecha_col], errors="coerce")
+                graph["fecha"] = pd.to_datetime(graph["fecha"], errors="coerce")
                 y_col = None
                 if "saldo_movimiento" in graph.columns:
                     y_col = "saldo_movimiento"
@@ -1279,14 +783,12 @@ def render_module(module_name: str) -> None:
                     y_col = "saldo"
                 elif "importe" in graph.columns:
                     y_col = "importe"
-                elif "valor_pesos" in graph.columns:
-                    y_col = "valor_pesos"
                 if y_col:
-                    chart = graph.groupby(graph[fecha_col].dt.date)[y_col].sum().reset_index()
-                    fig = px.line(chart, x=fecha_col, y=y_col, markers=True, title=f"Evolución: {module_name}")
+                    chart = graph.groupby(graph["fecha"].dt.date)[y_col].sum().reset_index()
+                    fig = px.line(chart, x="fecha", y=y_col, markers=True, title=f"Evolución: {module_name}")
                     st.plotly_chart(fig, use_container_width=True)
 
-    with tab4:
+    with tab3:
         df = get_df(table)
         if df.empty:
             st.warning("No hay registros para editar.")
@@ -1320,14 +822,12 @@ def render_module(module_name: str) -> None:
                 st.success("Registro eliminado.")
                 st.rerun()
 
-    with tab5:
+    with tab4:
         df = add_balance_columns(get_df(table))
         if df.empty:
             st.info("No hay datos para exportar.")
         else:
-            incluir_tecnicas = st.checkbox("Incluir columnas técnicas id / created_at / updated_at", value=False, key=f"export_tech_{table}")
-            export_df = df if incluir_tecnicas else module_business_df(df, cfg)
-            csv = export_df.to_csv(index=False).encode("utf-8-sig")
+            csv = df.to_csv(index=False).encode("utf-8-sig")
             st.download_button(
                 "Descargar CSV",
                 data=csv,
@@ -1335,7 +835,7 @@ def render_module(module_name: str) -> None:
                 mime="text/csv",
             )
             xlsx_path = Path(f"{table}.xlsx")
-            export_df.to_excel(xlsx_path, index=False)
+            df.to_excel(xlsx_path, index=False)
             with open(xlsx_path, "rb") as f:
                 st.download_button(
                     "Descargar Excel",
