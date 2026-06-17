@@ -34,22 +34,12 @@ st.set_page_config(
 st.markdown(
     """
     <style>
-    .main-title {
-        font-size: 2.1rem;
-        font-weight: 800;
-        margin-bottom: 0.1rem;
-    }
-    .subtitle {
-        color: #6b7280;
-        margin-bottom: 1.2rem;
-    }
-    div[data-testid="stMetricValue"] {
-        font-size: 1.35rem !important;
-    }
-    .small-muted {
-        color: #6b7280;
-        font-size: 0.88rem;
-    }
+    .main-title {font-size:2.15rem;font-weight:850;margin-bottom:0.1rem;}
+    .subtitle {color:#6b7280;margin-bottom:1.2rem;}
+    div[data-testid="stMetricValue"] {font-size:1.35rem !important;}
+    .small-muted {color:#6b7280;font-size:0.88rem;}
+    .block-container {padding-top:1.4rem;}
+    .pro-card {border:1px solid #e5e7eb;border-radius:14px;padding:14px;background:#ffffff;}
     </style>
     """,
     unsafe_allow_html=True,
@@ -61,354 +51,84 @@ st.markdown(
 
 MODULES: Dict[str, Dict[str, Any]] = {
     "Caja VMR": {
-        "table": "caja_vmr",
-        "empresa": "VMR",
-        "tipo": "flujo",
-        "descripcion": "Movimientos de efectivo de Vitae Medicina Reproductiva.",
-        "fields": [
-            ("fecha", "date", True),
-            ("concepto", "text", True),
-            ("categoria", "select", True, ["Ingreso", "Egreso", "Retiro", "Aporte", "Otro"]),
-            ("medio", "select", True, ["Efectivo", "Transferencia", "Tarjeta", "Cheque", "Otro"]),
-            ("ingreso", "money", False),
-            ("egreso", "money", False),
-            ("responsable", "text", False),
-            ("observaciones", "textarea", False),
-        ],
+        "table": "caja_vmr", "empresa": "VMR", "tipo": "flujo", "descripcion": "Movimientos de efectivo de Vitae Medicina Reproductiva.",
+        "fields": [("fecha","date",True),("concepto","text",True),("categoria","select",True,["Ingreso","Egreso","Retiro","Aporte","Otro"]),("medio","select",True,["Efectivo","Transferencia","Tarjeta","Cheque","Otro"]),("ingreso","money",False),("egreso","money",False),("responsable","text",False),("observaciones","textarea",False)],
     },
     "Banco Macro VMR": {
-        "table": "banco_macro_vmr",
-        "empresa": "VMR",
-        "tipo": "flujo",
-        "descripcion": "Movimientos bancarios de Banco Macro pertenecientes a VMR.",
-        "fields": [
-            ("fecha", "date", True),
-            ("concepto", "text", True),
-            ("tipo_movimiento", "select", True, ["Crédito", "Débito", "Transferencia", "Débito automático", "Impuesto", "Otro"]),
-            ("referencia", "text", False),
-            ("ingreso", "money", False),
-            ("egreso", "money", False),
-            ("conciliado", "bool", False),
-            ("observaciones", "textarea", False),
-        ],
+        "table": "banco_macro_vmr", "empresa": "VMR", "tipo": "flujo", "descripcion": "Movimientos bancarios de Banco Macro pertenecientes a VMR.",
+        "fields": [("fecha","date",True),("concepto","text",True),("tipo_movimiento","select",True,["Crédito","Débito","Transferencia","Débito automático","Impuesto","Otro"]),("referencia","text",False),("ingreso","money",False),("egreso","money",False),("conciliado","bool",False),("observaciones","textarea",False)],
     },
     "Cuenta Corriente VMR": {
-        "table": "cuenta_corriente_vmr",
-        "empresa": "VMR",
-        "tipo": "cuenta_corriente",
-        "descripcion": "Cuentas por cobrar y pagar de VMR.",
-        "fields": [
-            ("fecha", "date", True),
-            ("persona_entidad", "text", True),
-            ("concepto", "text", True),
-            ("tipo", "select", True, ["A cobrar", "A pagar"]),
-            ("importe", "money", True),
-            ("pagado", "money", False),
-            ("vencimiento", "date", False),
-            ("estado", "select", True, ["Pendiente", "Parcial", "Pagado", "Vencido"]),
-            ("observaciones", "textarea", False),
-        ],
+        "table": "cuenta_corriente_vmr", "empresa": "VMR", "tipo": "cuenta_corriente", "descripcion": "Cuentas por cobrar y pagar de VMR.",
+        "fields": [("fecha","date",True),("persona_entidad","text",True),("concepto","text",True),("tipo","select",True,["A cobrar","A pagar"]),("importe","money",True),("pagado","money",False),("vencimiento","date",False),("estado","select",True,["Pendiente","Parcial","Pagado","Vencido"]),("observaciones","textarea",False)],
     },
     "Facturación VMR": {
-        "table": "facturacion_vmr",
-        "empresa": "VMR",
-        "tipo": "facturacion",
-        "descripcion": "Control de facturación de procedimientos/pacientes de VMR según planilla quirófano.",
-        "fields": [
-            ("mes", "text", True),
-            ("afiliado", "text", True),
-            ("obra_social", "text", True),
-            ("procedimiento", "text", True),
-            ("medico_responsable", "text", True),
-            ("fecha_factura", "date", False),
-            ("numero_factura", "text", False),
-            ("vencimiento", "date", False),
-            ("fecha_pago", "date", False),
-            ("valor_pesos", "money", True),
-            ("valor_usd", "money", False),
-            ("estado", "select", True, ["Pendiente", "Completo", "Parcial", "Vencido", "Anulado"]),
-            ("observaciones", "textarea", False),
-        ],
+        "table": "facturacion_vmr", "empresa": "VMR", "tipo": "facturacion", "descripcion": "Control de facturación de procedimientos/pacientes de VMR según planilla quirófano.",
+        "fields": [("mes","text",True),("afiliado","text",True),("obra_social","text",True),("procedimiento","text",True),("medico_responsable","text",True),("fecha_factura","date",False),("numero_factura","text",False),("vencimiento","date",False),("fecha_pago","date",False),("valor_pesos","money",True),("valor_usd","money",False),("estado","select",True,["Pendiente","Completo","Parcial","Vencido","Anulado"]),("observaciones","textarea",False)],
     },
     "Caja VM": {
-        "table": "caja_vm",
-        "empresa": "VM",
-        "tipo": "flujo",
-        "descripcion": "Movimientos de efectivo de Vitae Medical.",
-        "fields": [
-            ("fecha", "date", True),
-            ("concepto", "text", True),
-            ("categoria", "select", True, ["Ingreso", "Egreso", "Retiro", "Aporte", "Otro"]),
-            ("medio", "select", True, ["Efectivo", "Transferencia", "Tarjeta", "Cheque", "Otro"]),
-            ("ingreso", "money", False),
-            ("egreso", "money", False),
-            ("responsable", "text", False),
-            ("observaciones", "textarea", False),
-        ],
+        "table": "caja_vm", "empresa": "VM", "tipo": "flujo", "descripcion": "Movimientos de efectivo de Vitae Medical.",
+        "fields": [("fecha","date",True),("concepto","text",True),("categoria","select",True,["Ingreso","Egreso","Retiro","Aporte","Otro"]),("medio","select",True,["Efectivo","Transferencia","Tarjeta","Cheque","Otro"]),("ingreso","money",False),("egreso","money",False),("responsable","text",False),("observaciones","textarea",False)],
     },
     "Banco Galicia VM": {
-        "table": "banco_galicia_vm",
-        "empresa": "VM",
-        "tipo": "flujo",
-        "descripcion": "Movimientos bancarios de Banco Galicia pertenecientes a VM.",
-        "fields": [
-            ("fecha", "date", True),
-            ("concepto", "text", True),
-            ("tipo_movimiento", "select", True, ["Crédito", "Débito", "Transferencia", "Débito automático", "Impuesto", "Otro"]),
-            ("referencia", "text", False),
-            ("ingreso", "money", False),
-            ("egreso", "money", False),
-            ("conciliado", "bool", False),
-            ("observaciones", "textarea", False),
-        ],
+        "table": "banco_galicia_vm", "empresa": "VM", "tipo": "flujo", "descripcion": "Movimientos bancarios de Banco Galicia pertenecientes a VM.",
+        "fields": [("fecha","date",True),("concepto","text",True),("tipo_movimiento","select",True,["Crédito","Débito","Transferencia","Débito automático","Impuesto","Otro"]),("referencia","text",False),("ingreso","money",False),("egreso","money",False),("conciliado","bool",False),("observaciones","textarea",False)],
     },
     "Cuenta Corriente VM": {
-        "table": "cuenta_corriente_vm",
-        "empresa": "VM",
-        "tipo": "cuenta_corriente",
-        "descripcion": "Cuentas por cobrar y pagar de VM.",
-        "fields": [
-            ("fecha", "date", True),
-            ("persona_entidad", "text", True),
-            ("concepto", "text", True),
-            ("tipo", "select", True, ["A cobrar", "A pagar"]),
-            ("importe", "money", True),
-            ("pagado", "money", False),
-            ("vencimiento", "date", False),
-            ("estado", "select", True, ["Pendiente", "Parcial", "Pagado", "Vencido"]),
-            ("observaciones", "textarea", False),
-        ],
+        "table": "cuenta_corriente_vm", "empresa": "VM", "tipo": "cuenta_corriente", "descripcion": "Cuentas por cobrar y pagar de VM.",
+        "fields": [("fecha","date",True),("persona_entidad","text",True),("concepto","text",True),("tipo","select",True,["A cobrar","A pagar"]),("importe","money",True),("pagado","money",False),("vencimiento","date",False),("estado","select",True,["Pendiente","Parcial","Pagado","Vencido"]),("observaciones","textarea",False)],
     },
     "Facturación VM": {
-        "table": "facturacion_vm",
-        "empresa": "VM",
-        "tipo": "facturacion",
-        "descripcion": "Control de facturación de procedimientos/pacientes de Vitae Medical según planilla quirófano.",
-        "fields": [
-            ("mes", "text", True),
-            ("afiliado", "text", True),
-            ("obra_social", "text", True),
-            ("procedimiento", "text", True),
-            ("medico_responsable", "text", True),
-            ("fecha_factura", "date", False),
-            ("numero_factura", "text", False),
-            ("vencimiento", "date", False),
-            ("fecha_pago", "date", False),
-            ("valor_pesos", "money", True),
-            ("valor_usd", "money", False),
-            ("estado", "select", True, ["Pendiente", "Completo", "Parcial", "Vencido", "Anulado"]),
-            ("observaciones", "textarea", False),
-        ],
+        "table": "facturacion_vm", "empresa": "VM", "tipo": "facturacion", "descripcion": "Control de facturación de procedimientos/pacientes de Vitae Medical según planilla quirófano.",
+        "fields": [("mes","text",True),("afiliado","text",True),("obra_social","text",True),("procedimiento","text",True),("medico_responsable","text",True),("fecha_factura","date",False),("numero_factura","text",False),("vencimiento","date",False),("fecha_pago","date",False),("valor_pesos","money",True),("valor_usd","money",False),("estado","select",True,["Pendiente","Completo","Parcial","Vencido","Anulado"]),("observaciones","textarea",False)],
     },
     "Deudas Impositivas VMR": {
-        "table": "deudas_impositivas_vmr",
-        "empresa": "VMR",
-        "tipo": "deuda",
-        "descripcion": "IVA, Ganancias, cargas sociales, autónomos, monotributo u otros impuestos VMR.",
-        "fields": [
-            ("fecha", "date", True),
-            ("impuesto", "select", True, ["IVA", "Ganancias", "Ingresos Brutos", "SUSS", "Monotributo", "Autónomos", "Municipal", "Otro"]),
-            ("periodo", "text", True),
-            ("importe", "money", True),
-            ("pagado", "money", False),
-            ("vencimiento", "date", True),
-            ("estado", "select", True, ["Pendiente", "Parcial", "Pagado", "Plan de pago", "Vencido"]),
-            ("observaciones", "textarea", False),
-        ],
+        "table": "deudas_impositivas_vmr", "empresa": "VMR", "tipo": "deuda", "descripcion": "IVA, Ganancias, cargas sociales, autónomos, monotributo u otros impuestos VMR.",
+        "fields": [("fecha","date",True),("impuesto","select",True,["IVA","Ganancias","Ingresos Brutos","SUSS","Monotributo","Autónomos","Municipal","Otro"]),("periodo","text",True),("importe","money",True),("pagado","money",False),("vencimiento","date",True),("estado","select",True,["Pendiente","Parcial","Pagado","Plan de pago","Vencido"]),("observaciones","textarea",False)],
     },
     "Deudas Impositivas VM": {
-        "table": "deudas_impositivas_vm",
-        "empresa": "VM",
-        "tipo": "deuda",
-        "descripcion": "IVA, Ganancias, cargas sociales, autónomos, monotributo u otros impuestos VM.",
-        "fields": [
-            ("fecha", "date", True),
-            ("impuesto", "select", True, ["IVA", "Ganancias", "Ingresos Brutos", "SUSS", "Monotributo", "Autónomos", "Municipal", "Otro"]),
-            ("periodo", "text", True),
-            ("importe", "money", True),
-            ("pagado", "money", False),
-            ("vencimiento", "date", True),
-            ("estado", "select", True, ["Pendiente", "Parcial", "Pagado", "Plan de pago", "Vencido"]),
-            ("observaciones", "textarea", False),
-        ],
+        "table": "deudas_impositivas_vm", "empresa": "VM", "tipo": "deuda", "descripcion": "IVA, Ganancias, cargas sociales, autónomos, monotributo u otros impuestos VM.",
+        "fields": [("fecha","date",True),("impuesto","select",True,["IVA","Ganancias","Ingresos Brutos","SUSS","Monotributo","Autónomos","Municipal","Otro"]),("periodo","text",True),("importe","money",True),("pagado","money",False),("vencimiento","date",True),("estado","select",True,["Pendiente","Parcial","Pagado","Plan de pago","Vencido"]),("observaciones","textarea",False)],
     },
     "Planes de pagos y préstamos": {
-        "table": "planes_pagos_prestamos",
-        "empresa": "VITAE",
-        "tipo": "deuda",
-        "descripcion": "Planes AFIP/ARCA, bancos, financieras, préstamos internos y externos.",
-        "fields": [
-            ("fecha", "date", True),
-            ("empresa", "select", True, ["VMR", "VM", "VITAE"]),
-            ("acreedor", "text", True),
-            ("detalle", "text", True),
-            ("cuotas_totales", "int", False),
-            ("cuotas_pagadas", "int", False),
-            ("importe_total", "money", True),
-            ("saldo", "money", True),
-            ("proximo_vencimiento", "date", False),
-            ("estado", "select", True, ["Activo", "Finalizado", "Mora", "Refinanciado"]),
-            ("observaciones", "textarea", False),
-        ],
+        "table": "planes_pagos_prestamos", "empresa": "VITAE", "tipo": "deuda", "descripcion": "Planes AFIP/ARCA, bancos, financieras, préstamos internos y externos.",
+        "fields": [("fecha","date",True),("empresa","select",True,["VMR","VM","VITAE"]),("acreedor","text",True),("detalle","text",True),("cuotas_totales","int",False),("cuotas_pagadas","int",False),("importe_total","money",True),("saldo","money",True),("proximo_vencimiento","date",False),("estado","select",True,["Activo","Finalizado","Mora","Refinanciado"]),("observaciones","textarea",False)],
     },
     "Pagos pendientes Vitae": {
-        "table": "pagos_pendientes_vitae",
-        "empresa": "VITAE",
-        "tipo": "pago_pendiente",
-        "descripcion": "Pagos pendientes globales de la empresa.",
-        "fields": [
-            ("fecha", "date", True),
-            ("empresa", "select", True, ["VMR", "VM", "VITAE"]),
-            ("proveedor", "text", True),
-            ("concepto", "text", True),
-            ("importe", "money", True),
-            ("pagado", "money", False),
-            ("vencimiento", "date", False),
-            ("prioridad", "select", True, ["Alta", "Media", "Baja"]),
-            ("estado", "select", True, ["Pendiente", "Parcial", "Pagado", "Vencido"]),
-            ("observaciones", "textarea", False),
-        ],
+        "table": "pagos_pendientes_vitae", "empresa": "VITAE", "tipo": "pago_pendiente", "descripcion": "Pagos pendientes globales de la empresa.",
+        "fields": [("fecha","date",True),("empresa","select",True,["VMR","VM","VITAE"]),("proveedor","text",True),("concepto","text",True),("importe","money",True),("pagado","money",False),("vencimiento","date",False),("prioridad","select",True,["Alta","Media","Baja"]),("estado","select",True,["Pendiente","Parcial","Pagado","Vencido"]),("observaciones","textarea",False)],
     },
     "Gastos comunes": {
-        "table": "gastos_comunes",
-        "empresa": "VITAE",
-        "tipo": "gasto",
-        "descripcion": "Gastos compartidos entre VMR y VM.",
-        "fields": [
-            ("fecha", "date", True),
-            ("rubro", "select", True, ["Luz", "Agua", "Gas", "Internet", "Limpieza", "Mantenimiento", "Sueldos", "Insumos", "Alquiler", "Otro"]),
-            ("concepto", "text", True),
-            ("importe", "money", True),
-            ("porcentaje_vmr", "number", False),
-            ("porcentaje_vm", "number", False),
-            ("pagado", "bool", False),
-            ("observaciones", "textarea", False),
-        ],
+        "table": "gastos_comunes", "empresa": "VITAE", "tipo": "gasto", "descripcion": "Gastos compartidos entre VMR y VM.",
+        "fields": [("fecha","date",True),("rubro","select",True,["Luz","Agua","Gas","Internet","Limpieza","Mantenimiento","Sueldos","Insumos","Alquiler","Otro"]),("concepto","text",True),("importe","money",True),("porcentaje_vmr","number",False),("porcentaje_vm","number",False),("pagado","bool",False),("observaciones","textarea",False)],
     },
     "Vencimientos": {
-        "table": "vencimientos",
-        "empresa": "VITAE",
-        "tipo": "vencimiento",
-        "descripcion": "Calendario general de vencimientos administrativos, impositivos, contratos, habilitaciones e insumos.",
-        "fields": [
-            ("fecha", "date", True),
-            ("empresa", "select", True, ["VMR", "VM", "VITAE"]),
-            ("tipo_vencimiento", "select", True, ["Impuesto", "Servicio", "Contrato", "Habilitación", "Seguro", "Medicamento", "Mantenimiento", "Otro"]),
-            ("detalle", "text", True),
-            ("importe", "money", False),
-            ("vencimiento", "date", True),
-            ("estado", "select", True, ["Pendiente", "Realizado", "Vencido", "Reprogramado"]),
-            ("observaciones", "textarea", False),
-        ],
+        "table": "vencimientos", "empresa": "VITAE", "tipo": "vencimiento", "descripcion": "Calendario general de vencimientos administrativos, impositivos, contratos, habilitaciones e insumos.",
+        "fields": [("fecha","date",True),("empresa","select",True,["VMR","VM","VITAE"]),("tipo_vencimiento","select",True,["Impuesto","Servicio","Contrato","Habilitación","Seguro","Medicamento","Mantenimiento","Otro"]),("detalle","text",True),("importe","money",False),("vencimiento","date",True),("estado","select",True,["Pendiente","Realizado","Vencido","Reprogramado"]),("observaciones","textarea",False)],
     },
     "Valores Alquileres": {
-        "table": "valores_alquileres",
-        "empresa": "VITAE",
-        "tipo": "contrato_valor",
-        "descripcion": "Control de alquileres, aumentos, valores mensuales y vigencia.",
-        "fields": [
-            ("fecha", "date", True),
-            ("inmueble_area", "text", True),
-            ("locador", "text", False),
-            ("valor_mensual", "money", True),
-            ("periodo", "text", True),
-            ("fecha_desde", "date", False),
-            ("fecha_hasta", "date", False),
-            ("proximo_aumento", "date", False),
-            ("estado", "select", True, ["Vigente", "Finalizado", "A renegociar"]),
-            ("observaciones", "textarea", False),
-        ],
+        "table": "valores_alquileres", "empresa": "VITAE", "tipo": "contrato_valor", "descripcion": "Control de alquileres, aumentos, valores mensuales y vigencia.",
+        "fields": [("fecha","date",True),("inmueble_area","text",True),("locador","text",False),("valor_mensual","money",True),("periodo","text",True),("fecha_desde","date",False),("fecha_hasta","date",False),("proximo_aumento","date",False),("estado","select",True,["Vigente","Finalizado","A renegociar"]),("observaciones","textarea",False)],
     },
     "Tareas Pendientes": {
-        "table": "tareas_pendientes",
-        "empresa": "VITAE",
-        "tipo": "tarea",
-        "descripcion": "Seguimiento de tareas administrativas y operativas.",
-        "fields": [
-            ("fecha", "date", True),
-            ("empresa", "select", True, ["VMR", "VM", "VITAE"]),
-            ("tarea", "text", True),
-            ("responsable", "text", False),
-            ("prioridad", "select", True, ["Alta", "Media", "Baja"]),
-            ("vencimiento", "date", False),
-            ("estado", "select", True, ["Pendiente", "En proceso", "Finalizada", "Cancelada"]),
-            ("observaciones", "textarea", False),
-        ],
+        "table": "tareas_pendientes", "empresa": "VITAE", "tipo": "tarea", "descripcion": "Seguimiento de tareas administrativas y operativas.",
+        "fields": [("fecha","date",True),("empresa","select",True,["VMR","VM","VITAE"]),("tarea","text",True),("responsable","text",False),("prioridad","select",True,["Alta","Media","Baja"]),("vencimiento","date",False),("estado","select",True,["Pendiente","En proceso","Finalizada","Cancelada"]),("observaciones","textarea",False)],
     },
     "Deuda total": {
-        "table": "deuda_total_manual",
-        "empresa": "VITAE",
-        "tipo": "deuda",
-        "descripcion": "Carga manual de deudas no contempladas en otros módulos. El tablero también calcula deuda total automática.",
-        "fields": [
-            ("fecha", "date", True),
-            ("empresa", "select", True, ["VMR", "VM", "VITAE"]),
-            ("acreedor", "text", True),
-            ("concepto", "text", True),
-            ("importe_original", "money", True),
-            ("pagado", "money", False),
-            ("saldo", "money", True),
-            ("vencimiento", "date", False),
-            ("estado", "select", True, ["Pendiente", "Parcial", "Pagado", "Vencido", "Refinanciado"]),
-            ("observaciones", "textarea", False),
-        ],
+        "table": "deuda_total_manual", "empresa": "VITAE", "tipo": "deuda", "descripcion": "Carga manual de deudas no contempladas en otros módulos.",
+        "fields": [("fecha","date",True),("empresa","select",True,["VMR","VM","VITAE"]),("acreedor","text",True),("concepto","text",True),("importe_original","money",True),("pagado","money",False),("saldo","money",True),("vencimiento","date",False),("estado","select",True,["Pendiente","Parcial","Pagado","Vencido","Refinanciado"]),("observaciones","textarea",False)],
     },
     "Contratos": {
-        "table": "contratos",
-        "empresa": "VITAE",
-        "tipo": "contrato",
-        "descripcion": "Contratos con profesionales, proveedores, alquileres, servicios y convenios.",
-        "fields": [
-            ("fecha", "date", True),
-            ("empresa", "select", True, ["VMR", "VM", "VITAE"]),
-            ("contraparte", "text", True),
-            ("tipo_contrato", "select", True, ["Profesional", "Proveedor", "Alquiler", "Servicio", "Convenio", "Otro"]),
-            ("detalle", "text", True),
-            ("inicio", "date", False),
-            ("fin", "date", False),
-            ("valor", "money", False),
-            ("estado", "select", True, ["Vigente", "Vencido", "A renovar", "Finalizado"]),
-            ("archivo_link", "text", False),
-            ("observaciones", "textarea", False),
-        ],
+        "table": "contratos", "empresa": "VITAE", "tipo": "contrato", "descripcion": "Contratos con profesionales, proveedores, alquileres, servicios y convenios.",
+        "fields": [("fecha","date",True),("empresa","select",True,["VMR","VM","VITAE"]),("contraparte","text",True),("tipo_contrato","select",True,["Profesional","Proveedor","Alquiler","Servicio","Convenio","Otro"]),("detalle","text",True),("inicio","date",False),("fin","date",False),("valor","money",False),("estado","select",True,["Vigente","Vencido","A renovar","Finalizado"]),("archivo_link","text",False),("observaciones","textarea",False)],
     },
     "Honorarios médicos": {
-        "table": "honorarios_medicos",
-        "empresa": "VITAE",
-        "tipo": "honorario",
-        "descripcion": "Honorarios por médico, prestación, estado de pago y empresa.",
-        "fields": [
-            ("fecha", "date", True),
-            ("empresa", "select", True, ["VMR", "VM", "VITAE"]),
-            ("medico", "text", True),
-            ("paciente", "text", False),
-            ("procedimiento", "text", True),
-            ("importe", "money", True),
-            ("pagado", "money", False),
-            ("fecha_pago", "date", False),
-            ("estado", "select", True, ["Pendiente", "Parcial", "Pagado"]),
-            ("observaciones", "textarea", False),
-        ],
+        "table": "honorarios_medicos", "empresa": "VITAE", "tipo": "honorario", "descripcion": "Honorarios por médico, prestación, estado de pago y empresa.",
+        "fields": [("fecha","date",True),("empresa","select",True,["VMR","VM","VITAE"]),("medico","text",True),("paciente","text",False),("procedimiento","text",True),("importe","money",True),("pagado","money",False),("fecha_pago","date",False),("estado","select",True,["Pendiente","Parcial","Pagado"]),("observaciones","textarea",False)],
     },
     "Gine Vitae": {
-        "table": "gine_vitae",
-        "empresa": "VM",
-        "tipo": "unidad_medica",
-        "descripcion": "Gestión de pacientes, prácticas, derivaciones y cirugías de la unidad Gine Vitae.",
-        "fields": [
-            ("fecha", "date", True),
-            ("paciente", "text", True),
-            ("dni", "text", False),
-            ("telefono", "text", False),
-            ("medico", "text", False),
-            ("obra_social", "text", False),
-            ("practica", "select", True, ["Consulta", "Control anual", "PAP", "Colposcopía", "HPV", "Ecografía", "Histeroscopía", "LEEP", "DIU", "Cirugía", "Otro"]),
-            ("estado", "select", True, ["Pendiente", "Turno dado", "Realizado", "Derivado a quirófano", "Cancelado"]),
-            ("importe", "money", False),
-            ("cobrado", "money", False),
-            ("proxima_accion", "text", False),
-            ("observaciones", "textarea", False),
-        ],
+        "table": "gine_vitae", "empresa": "VM", "tipo": "unidad_medica", "descripcion": "Gestión de pacientes, prácticas, derivaciones y cirugías de la unidad Gine Vitae.",
+        "fields": [("fecha","date",True),("paciente","text",True),("dni","text",False),("telefono","text",False),("medico","text",False),("obra_social","text",False),("practica","select",True,["Consulta","Control anual","PAP","Colposcopía","HPV","Ecografía","Histeroscopía","LEEP","DIU","Cirugía","Otro"]),("estado","select",True,["Pendiente","Turno dado","Realizado","Derivado a quirófano","Cancelado"]),("importe","money",False),("cobrado","money",False),("proxima_accion","text",False),("observaciones","textarea",False)],
     },
 }
 
@@ -424,17 +144,11 @@ def connect() -> sqlite3.Connection:
 def sql_type(field_type: str) -> str:
     if field_type in {"money", "number"}:
         return "REAL"
-    if field_type == "int":
-        return "INTEGER"
-    if field_type == "bool":
+    if field_type in {"int", "bool"}:
         return "INTEGER"
     return "TEXT"
 
 def init_db() -> None:
-    """Crea tablas y agrega columnas nuevas si actualizás el esquema.
-
-    SQLite no borra columnas viejas, pero la app muestra/exporta solo las columnas vigentes.
-    """
     with connect() as conn:
         for cfg in MODULES.values():
             table = cfg["table"]
@@ -443,7 +157,6 @@ def init_db() -> None:
                 name, ftype = field[0], field[1]
                 columns.append(f"{name} {sql_type(ftype)}")
             conn.execute(f"CREATE TABLE IF NOT EXISTS {table} ({', '.join(columns)})")
-
             existing_cols = [row[1] for row in conn.execute(f"PRAGMA table_info({table})").fetchall()]
             for field in cfg["fields"]:
                 name, ftype = field[0], field[1]
@@ -458,7 +171,6 @@ def init_db() -> None:
         """)
         conn.commit()
 
-
 def get_df(table: str) -> pd.DataFrame:
     with connect() as conn:
         try:
@@ -471,9 +183,8 @@ def insert_row(table: str, data: Dict[str, Any]) -> None:
     data = {**data, "created_at": now, "updated_at": now}
     cols = list(data.keys())
     placeholders = ", ".join(["?"] * len(cols))
-    sql = f"INSERT INTO {table} ({', '.join(cols)}) VALUES ({placeholders})"
     with connect() as conn:
-        conn.execute(sql, [data[c] for c in cols])
+        conn.execute(f"INSERT INTO {table} ({', '.join(cols)}) VALUES ({placeholders})", [data[c] for c in cols])
         conn.commit()
 
 def bulk_insert_rows(table: str, rows: List[Dict[str, Any]]) -> int:
@@ -483,10 +194,9 @@ def bulk_insert_rows(table: str, rows: List[Dict[str, Any]]) -> int:
     clean_rows = [{**row, "created_at": now, "updated_at": now} for row in rows]
     cols = list(clean_rows[0].keys())
     placeholders = ", ".join(["?"] * len(cols))
-    sql = f"INSERT INTO {table} ({', '.join(cols)}) VALUES ({placeholders})"
     values = [[row.get(c, "") for c in cols] for row in clean_rows]
     with connect() as conn:
-        conn.executemany(sql, values)
+        conn.executemany(f"INSERT INTO {table} ({', '.join(cols)}) VALUES ({placeholders})", values)
         conn.commit()
     return len(clean_rows)
 
@@ -499,14 +209,37 @@ def replace_table_rows(table: str, rows: List[Dict[str, Any]]) -> int:
 def update_row(table: str, row_id: int, data: Dict[str, Any]) -> None:
     data = {**data, "updated_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S")}
     sets = ", ".join([f"{k} = ?" for k in data.keys()])
-    sql = f"UPDATE {table} SET {sets} WHERE id = ?"
     with connect() as conn:
-        conn.execute(sql, [*data.values(), row_id])
+        conn.execute(f"UPDATE {table} SET {sets} WHERE id = ?", [*data.values(), row_id])
         conn.commit()
 
 def delete_row(table: str, row_id: int) -> None:
     with connect() as conn:
         conn.execute(f"DELETE FROM {table} WHERE id = ?", (row_id,))
+        conn.commit()
+
+def get_setting(key: str, default: Any = None) -> Any:
+    with connect() as conn:
+        row = conn.execute("SELECT value FROM app_settings WHERE key = ?", (key,)).fetchone()
+    if row is None:
+        return default
+    try:
+        return json.loads(row["value"])
+    except Exception:
+        return row["value"]
+
+def set_setting(key: str, value: Any) -> None:
+    now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    payload = json.dumps(value, ensure_ascii=False)
+    with connect() as conn:
+        conn.execute(
+            """
+            INSERT INTO app_settings (key, value, updated_at)
+            VALUES (?, ?, ?)
+            ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = excluded.updated_at
+            """,
+            (key, payload, now),
+        )
         conn.commit()
 
 # =========================================================
@@ -605,9 +338,7 @@ def input_field(field: Tuple, prefix: str, existing: Dict[str, Any] | None = Non
 
     if ftype == "date":
         value = parse_date(old) if old else date.today()
-        if value is None:
-            value = date.today()
-        return st.date_input(label, value=value, key=key)
+        return st.date_input(label, value=value or date.today(), key=key)
     if ftype == "money":
         return st.number_input(label, min_value=0.0, step=1000.0, value=money(old), key=key)
     if ftype == "number":
@@ -617,9 +348,7 @@ def input_field(field: Tuple, prefix: str, existing: Dict[str, Any] | None = Non
     if ftype == "bool":
         return st.checkbox(label, value=bool(old), key=key)
     if ftype == "select":
-        idx = 0
-        if options and old in options:
-            idx = options.index(old)
+        idx = options.index(old) if options and old in options else 0
         return st.selectbox(label, options or [], index=idx, key=key)
     if ftype == "textarea":
         return st.text_area(label, value=str(old or ""), key=key)
@@ -641,15 +370,17 @@ def get_field_names(cfg: Dict[str, Any]) -> List[str]:
 def business_df(df: pd.DataFrame) -> pd.DataFrame:
     if df is None or df.empty:
         return df
-    cols = [c for c in df.columns if c not in TECH_COLUMNS]
-    return df[cols].copy()
+    return df[[c for c in df.columns if c not in TECH_COLUMNS]].copy()
 
 def module_business_df(df: pd.DataFrame, cfg: Dict[str, Any]) -> pd.DataFrame:
     if df is None or df.empty:
         return df
     field_names = get_field_names(cfg)
     calc_cols = ["saldo", "saldo_movimiento"]
-    cols = [c for c in field_names + calc_cols if c in df.columns]
+    cols = []
+    for c in field_names + calc_cols:
+        if c in df.columns and c not in cols:
+            cols.append(c)
     return df[cols].copy()
 
 def show_business_table(df: pd.DataFrame, **kwargs: Any) -> None:
@@ -666,14 +397,9 @@ def add_balance_columns(df: pd.DataFrame) -> pd.DataFrame:
         df["saldo_movimiento"] = df["ingreso"].apply(money) - df["egreso"].apply(money)
     if "importe" in df.columns and "pagado" in df.columns:
         df["saldo"] = df["importe"].apply(money) - df["pagado"].apply(money)
-    if "valor_pesos" in df.columns:
-        df["valor_pesos"] = df["valor_pesos"].apply(money)
-    if "valor_usd" in df.columns:
-        df["valor_usd"] = df["valor_usd"].apply(money)
-    if "importe_total" in df.columns and "saldo" in df.columns:
-        df["saldo"] = df["saldo"].apply(money)
-    if "importe_original" in df.columns and "saldo" in df.columns:
-        df["saldo"] = df["saldo"].apply(money)
+    for col in ["valor_pesos", "valor_usd", "importe", "pagado", "saldo", "importe_total", "importe_original", "valor", "valor_mensual", "cobrado"]:
+        if col in df.columns:
+            df[col] = df[col].apply(money)
     return df
 
 def first_available_date_col(df: pd.DataFrame, module_name: str) -> str | None:
@@ -684,20 +410,24 @@ def first_available_date_col(df: pd.DataFrame, module_name: str) -> str | None:
             return candidate
     return None
 
+def unique_options(df: pd.DataFrame, col: str, all_label: str) -> List[str]:
+    if col not in df.columns:
+        return [all_label]
+    vals = [str(x).strip() for x in df[col].dropna().unique().tolist() if str(x).strip() != ""]
+    return [all_label] + sorted(vals)
+
 def apply_filters(df: pd.DataFrame, module_name: str) -> pd.DataFrame:
     if df.empty:
         return df
     df = df.copy()
     st.subheader("Filtros")
     c1, c2, c3, c4 = st.columns(4)
-
     with c1:
         search = st.text_input("Buscar texto", key=f"search_{module_name}")
     with c2:
         estado = "Todos"
         if "estado" in df.columns:
-            estados = [str(x).strip() for x in df["estado"].dropna().unique().tolist() if str(x).strip() != ""]
-            estado = st.selectbox("Estado", ["Todos"] + sorted(estados), key=f"estado_{module_name}")
+            estado = st.selectbox("Estado", unique_options(df, "estado", "Todos"), key=f"estado_{module_name}")
     with c3:
         fecha_desde = st.date_input("Desde", value=date.today() - timedelta(days=3650), key=f"desde_{module_name}")
     with c4:
@@ -708,14 +438,10 @@ def apply_filters(df: pd.DataFrame, module_name: str) -> pd.DataFrame:
         df = df[mask]
     if "estado" in df.columns and estado != "Todos":
         df = df[df["estado"].astype(str).str.strip() == estado]
-
     fecha_col = first_available_date_col(df, module_name)
     if fecha_col:
         fechas = pd.to_datetime(df[fecha_col], errors="coerce")
-        desde_ts = pd.Timestamp(fecha_desde)
-        hasta_ts = pd.Timestamp(fecha_hasta)
-        # Conserva filas sin fecha para que no desaparezcan registros importados con fecha_factura vacía.
-        df = df[fechas.isna() | ((fechas >= desde_ts) & (fechas <= hasta_ts))]
+        df = df[fechas.isna() | ((fechas >= pd.Timestamp(fecha_desde)) & (fechas <= pd.Timestamp(fecha_hasta)))]
     return df
 
 # =========================================================
@@ -728,13 +454,7 @@ def clean_tabular_sheet(df_raw: pd.DataFrame) -> pd.DataFrame:
     raw = df_raw.copy().dropna(how="all").dropna(axis=1, how="all")
     if raw.empty:
         return raw
-
-    header_keywords = {
-        "mes", "afiliado", "obra social", "procedimiento", "medico", "médico",
-        "fecha factura", "factura", "vencimiento", "fecha pago", "valor", "estado",
-        "cliente", "paciente", "importe", "concepto", "comprobante"
-    }
-
+    header_keywords = {"mes", "afiliado", "obra social", "procedimiento", "medico", "médico", "fecha factura", "factura", "vencimiento", "fecha pago", "valor", "estado", "cliente", "paciente", "importe", "concepto", "comprobante"}
     best_idx = raw.index[0]
     best_score = -1.0
     for idx, row in raw.iterrows():
@@ -746,7 +466,6 @@ def clean_tabular_sheet(df_raw: pd.DataFrame) -> pd.DataFrame:
         if score > best_score:
             best_score = score
             best_idx = idx
-
     header_values = raw.loc[best_idx].tolist()
     columns: List[str] = []
     used: Dict[str, int] = {}
@@ -759,7 +478,6 @@ def clean_tabular_sheet(df_raw: pd.DataFrame) -> pd.DataFrame:
         else:
             used[name] = 1
         columns.append(name)
-
     cleaned = raw.loc[raw.index > best_idx].copy()
     cleaned.columns = columns
     cleaned = cleaned.dropna(how="all")
@@ -785,45 +503,24 @@ def field_label(field: Tuple) -> str:
 def auto_guess_column(target_name: str, source_columns: List[str]) -> str:
     norm_target = target_name.lower().replace("_", " ")
     aliases = {
-        "fecha": ["fecha", "dia", "día", "date"],
-        "mes": ["mes", "periodo", "período"],
-        "afiliado": ["afiliado", "paciente", "cliente", "nombre", "apellido y nombre"],
-        "obra_social": ["obra social", "os", "prepaga"],
-        "procedimiento": ["procedimiento", "practica", "práctica", "prestacion", "prestación"],
+        "fecha": ["fecha", "dia", "día", "date"], "mes": ["mes", "periodo", "período"], "afiliado": ["afiliado", "paciente", "cliente", "nombre", "apellido y nombre"],
+        "obra_social": ["obra social", "os", "prepaga"], "procedimiento": ["procedimiento", "practica", "práctica", "prestacion", "prestación"],
         "medico_responsable": ["medico responsable", "médico responsable", "medico", "médico", "doctor", "profesional", "responsable"],
-        "fecha_factura": ["fecha factura", "fecha de factura", "fecha", "factura fecha"],
-        "numero_factura": ["n° factura", "nº factura", "n factura", "numero factura", "número factura", "factura", "comprobante"],
-        "fecha_pago": ["fecha pago", "fecha de pago", "pago fecha"],
-        "valor_pesos": ["valor $", "valor pesos", "valor ars", "importe", "monto", "total", "valor"],
-        "valor_usd": ["valor usd", "usd", "dolares", "dólares"],
-        "cliente": ["cliente", "paciente", "nombre", "razon social", "razón social"],
-        "concepto": ["concepto", "detalle", "descripcion", "descripción", "movimiento", "observacion"],
-        "detalle": ["detalle", "concepto", "descripcion", "descripción"],
-        "persona_entidad": ["persona", "entidad", "cliente", "proveedor", "paciente", "nombre"],
-        "proveedor": ["proveedor", "acreedor", "contraparte", "entidad"],
-        "acreedor": ["acreedor", "proveedor", "banco", "entidad"],
-        "contraparte": ["contraparte", "proveedor", "profesional", "locador"],
-        "medico": ["medico", "médico", "doctor", "profesional"],
-        "importe": ["importe", "monto", "total", "valor", "debe", "saldo"],
-        "importe_total": ["importe total", "total", "monto", "importe"],
-        "importe_original": ["importe original", "deuda", "total", "importe", "monto"],
-        "valor": ["valor", "importe", "monto", "total"],
-        "valor_mensual": ["valor mensual", "alquiler", "importe", "monto", "total"],
-        "ingreso": ["ingreso", "entradas", "haber", "credito", "crédito", "cobro"],
-        "egreso": ["egreso", "salidas", "debe", "debito", "débito", "pago"],
-        "pagado": ["pagado", "pago", "abonado", "cancelado"],
-        "cobrado": ["cobrado", "cobro", "pagado", "abonado"],
-        "saldo": ["saldo", "pendiente", "resta", "deuda"],
-        "estado": ["estado", "situacion", "situación", "status"],
-        "vencimiento": ["vencimiento", "vence", "fecha vencimiento"],
-        "proximo_vencimiento": ["proximo vencimiento", "próximo vencimiento", "vencimiento", "vence"],
-        "observaciones": ["observaciones", "observacion", "obs", "nota", "comentario"],
-        "responsable": ["responsable", "usuario", "encargado"],
-        "dni": ["dni", "documento"],
-        "telefono": ["telefono", "teléfono", "celular", "whatsapp"],
-        "practica": ["practica", "práctica", "prestacion", "prestación", "procedimiento"],
-        "periodo": ["periodo", "período", "mes"],
-        "comprobante": ["comprobante", "factura", "n factura", "n° factura", "nº factura"],
+        "fecha_factura": ["fecha factura", "fecha de factura", "fecha", "factura fecha"], "numero_factura": ["n° factura", "nº factura", "n factura", "numero factura", "número factura", "factura", "comprobante"],
+        "fecha_pago": ["fecha pago", "fecha de pago", "pago fecha"], "valor_pesos": ["valor $", "valor pesos", "valor ars", "importe", "monto", "total", "valor"],
+        "valor_usd": ["valor usd", "usd", "dolares", "dólares"], "concepto": ["concepto", "detalle", "descripcion", "descripción", "movimiento", "observacion"],
+        "detalle": ["detalle", "concepto", "descripcion", "descripción"], "persona_entidad": ["persona", "entidad", "cliente", "proveedor", "paciente", "nombre"],
+        "proveedor": ["proveedor", "acreedor", "contraparte", "entidad"], "acreedor": ["acreedor", "proveedor", "banco", "entidad"],
+        "contraparte": ["contraparte", "proveedor", "profesional", "locador"], "medico": ["medico", "médico", "doctor", "profesional"],
+        "importe": ["importe", "monto", "total", "valor", "debe", "saldo"], "importe_total": ["importe total", "total", "monto", "importe"],
+        "importe_original": ["importe original", "deuda", "total", "importe", "monto"], "valor": ["valor", "importe", "monto", "total"],
+        "valor_mensual": ["valor mensual", "alquiler", "importe", "monto", "total"], "ingreso": ["ingreso", "entradas", "haber", "credito", "crédito", "cobro"],
+        "egreso": ["egreso", "salidas", "debe", "debito", "débito", "pago"], "pagado": ["pagado", "pago", "abonado", "cancelado"],
+        "cobrado": ["cobrado", "cobro", "pagado", "abonado"], "saldo": ["saldo", "pendiente", "resta", "deuda"],
+        "estado": ["estado", "situacion", "situación", "status"], "vencimiento": ["vencimiento", "vence", "fecha vencimiento"],
+        "proximo_vencimiento": ["proximo vencimiento", "próximo vencimiento", "vencimiento", "vence"], "observaciones": ["observaciones", "observacion", "obs", "nota", "comentario"],
+        "responsable": ["responsable", "usuario", "encargado"], "dni": ["dni", "documento"], "telefono": ["telefono", "teléfono", "celular", "whatsapp"],
+        "practica": ["practica", "práctica", "prestacion", "prestación", "procedimiento"], "periodo": ["periodo", "período", "mes"], "comprobante": ["comprobante", "factura", "n factura", "n° factura", "nº factura"],
     }
     candidates = aliases.get(target_name, [norm_target])
     normalized_sources = {str(col).lower().replace("_", " ").strip(): col for col in source_columns}
@@ -852,13 +549,7 @@ def normalize_select_value(value: Any, options: List[str]) -> str:
     for opt in options:
         if text.lower() == opt.lower():
             return opt
-    aliases = {
-        "cobrado": "Cobrado", "pagado": "Pagado", "pendiente": "Pendiente", "vencido": "Vencido",
-        "parcial": "Parcial", "completo": "Completo", "completa": "Completo",
-        "realizado": "Realizado", "finalizada": "Finalizada", "finalizado": "Finalizado",
-        "alta": "Alta", "media": "Media", "baja": "Baja",
-        "credito": "Crédito", "crédito": "Crédito", "debito": "Débito", "débito": "Débito",
-    }
+    aliases = {"cobrado": "Completo", "pagado": "Pagado", "pendiente": "Pendiente", "vencido": "Vencido", "parcial": "Parcial", "completo": "Completo", "completa": "Completo", "realizado": "Realizado", "finalizada": "Finalizada", "finalizado": "Finalizado", "alta": "Alta", "media": "Media", "baja": "Baja", "credito": "Crédito", "crédito": "Crédito", "debito": "Débito", "débito": "Débito"}
     wanted = aliases.get(text.lower())
     if wanted and wanted in options:
         return wanted
@@ -900,30 +591,23 @@ def render_importer(module_name: str, cfg: Dict[str, Any]) -> None:
     table = cfg["table"]
     st.subheader("Importar planilla Excel / CSV")
     st.caption("Subí una planilla, elegí la hoja, mapeá columnas y guardala dentro de este módulo.")
-
     uploaded_file = st.file_uploader("Subir archivo", type=["xlsx", "xls", "csv"], key=f"upload_{table}")
     if uploaded_file is None:
         st.info("Acepta Excel con varias hojas o CSV.")
         return
-
     try:
         sheets = read_uploaded_sheet(uploaded_file)
     except Exception as e:
         st.error(f"No pude leer el archivo. Detalle: {e}")
         return
-
-    sheet_names = list(sheets.keys())
-    selected_sheet = st.selectbox("Hoja a importar", sheet_names, key=f"sheet_{table}")
+    selected_sheet = st.selectbox("Hoja a importar", list(sheets.keys()), key=f"sheet_{table}")
     df_original = sheets[selected_sheet].copy().dropna(how="all")
     df_original.columns = [str(c).strip() for c in df_original.columns]
-
     if df_original.empty:
         st.warning("La hoja seleccionada está vacía.")
         return
-
     st.markdown("#### Vista previa")
     show_business_table(df_original.head(30))
-
     columnas = df_original.columns.tolist()
     st.markdown("#### Mapeo de columnas")
     mapping: Dict[str, str] = {}
@@ -935,12 +619,10 @@ def render_importer(module_name: str, cfg: Dict[str, Any]) -> None:
         index = options.index(guessed) if guessed in options else 0
         with cols[i % 2]:
             mapping[name] = st.selectbox(field_label(field), options, index=index, key=f"map_{table}_{name}")
-
     with st.expander("Opciones avanzadas"):
         modo = st.radio("Modo de importación", ["Agregar a registros existentes", "Reemplazar módulo completo"], key=f"modo_import_{table}")
         saltar_filas_vacias = st.checkbox("Saltar filas completamente vacías", value=True, key=f"skip_empty_{table}")
         validar_obligatorios = st.checkbox("Validar campos obligatorios", value=False, key=f"valid_required_{table}")
-
     rows: List[Dict[str, Any]] = []
     rejected_rows: List[Dict[str, Any]] = []
     for idx, source_row in df_original.iterrows():
@@ -961,7 +643,6 @@ def render_importer(module_name: str, cfg: Dict[str, Any]) -> None:
             rejected_rows.append({"fila_excel": idx + 2, "motivo": ", ".join(errors), **new_row})
         else:
             rows.append(new_row)
-
     st.markdown("#### Previsualización final")
     preview_df = pd.DataFrame(rows)
     if preview_df.empty:
@@ -969,17 +650,14 @@ def render_importer(module_name: str, cfg: Dict[str, Any]) -> None:
     else:
         show_business_table(preview_df.head(50))
         st.success(f"Filas listas para importar: {len(rows)}")
-
     if rejected_rows:
         with st.expander(f"Filas rechazadas: {len(rejected_rows)}"):
             show_business_table(pd.DataFrame(rejected_rows))
-
     col_a, col_b = st.columns([1, 2])
     with col_a:
         confirm_import = st.checkbox("Confirmo la importación", key=f"confirm_import_{table}")
     with col_b:
         st.caption("Si reemplazás el módulo completo, se borran los registros anteriores de este módulo.")
-
     if st.button("Importar planilla al módulo", type="primary", disabled=(not confirm_import or not rows), key=f"btn_import_{table}"):
         count = replace_table_rows(table, rows) if modo == "Reemplazar módulo completo" else bulk_insert_rows(table, rows)
         st.success(f"Importación completada. Registros importados en {module_name}: {count}")
@@ -992,929 +670,233 @@ def render_importer(module_name: str, cfg: Dict[str, Any]) -> None:
 def render_header() -> None:
     st.markdown('<div class="main-title">🏥 VITAE | Sistema Integral de Gestión</div>', unsafe_allow_html=True)
     st.markdown('<div class="subtitle">VMR · Vitae Medicina Reproductiva | VM · Vitae Medical</div>', unsafe_allow_html=True)
-def get_setting(key: str, default: Any = None) -> Any:
-
-
-
-    with connect() as conn:
-
-
-
-        row = conn.execute("SELECT value FROM app_settings WHERE key = ?", (key,)).fetchone()
-
-
-
-    if row is None:
-
-
-
-        return default
-
-
-
-    try:
-
-
-
-        return json.loads(row["value"])
-
-
-
-    except Exception:
-
-
-
-        return row["value"]
-
-
-
-def set_setting(key: str, value: Any) -> None:
-
-
-
-    now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-
-
-
-    payload = json.dumps(value, ensure_ascii=False)
-
-
-
-    with connect() as conn:
-
-
-
-        conn.execute(
-
-
-
-            """
-
-
-
-            INSERT INTO app_settings (key, value, updated_at)
-
-
-
-            VALUES (?, ?, ?)
-
-
-
-            ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = excluded.updated_at
-
-
-
-            """,
-
-
-
-            (key, payload, now),
-
-
-
-        )
-
-
-
-        conn.commit()
-
-
 
 DEFAULT_FACT_LABELS = {
-
-
-
-    "mes": "Mes",
-
-
-
-    "afiliado": "Paciente / Afiliado",
-
-
-
-    "obra_social": "Obra social",
-
-
-
-    "procedimiento": "Procedimiento",
-
-
-
-    "medico_responsable": "Médico",
-
-
-
-    "fecha_factura": "Fecha factura",
-
-
-
-    "numero_factura": "N° factura",
-
-
-
-    "vencimiento": "Vencimiento",
-
-
-
-    "fecha_pago": "Fecha pago",
-
-
-
-    "valor_pesos": "Valor facturado",
-
-
-
-    "valor_usd": "Valor USD",
-
-
-
-    "estado": "Estado",
-
-
-
-    "observaciones": "Observaciones",
-
-
-
+    "mes": "Mes", "afiliado": "Paciente / Afiliado", "obra_social": "Obra social", "procedimiento": "Procedimiento", "medico_responsable": "Médico", "fecha_factura": "Fecha factura", "numero_factura": "N° factura", "vencimiento": "Vencimiento", "fecha_pago": "Fecha pago", "valor_pesos": "Valor facturado", "valor_usd": "Valor USD", "estado": "Estado", "observaciones": "Observaciones",
 }
 
-
-
 def get_fact_labels(module_name: str, cfg: Dict[str, Any]) -> Dict[str, str]:
-
-
-
-    key = f"labels_{cfg['table']}"
-
-
-
-    saved = get_setting(key, {})
-
-
-
+    saved = get_setting(f"labels_{cfg['table']}", {})
     labels = DEFAULT_FACT_LABELS.copy()
-
-
-
     if isinstance(saved, dict):
-
-
-
         labels.update(saved)
-
-
-
     return labels
 
-
-
-def rename_fact_df(df: pd.DataFrame, labels: Dict[str, str]) -> pd.DataFrame:
-
-
-
-    return df.rename(columns={c: labels.get(c, c.replace("_", " ").title()) for c in df.columns})
-
-
-
 def format_facturacion_table(df: pd.DataFrame, labels: Dict[str, str]) -> pd.DataFrame:
-
-
-
     if df.empty:
-
-
-
         return df
-
-
-
-    show = df.copy()
-
-
-
+    preferred = ["mes", "afiliado", "obra_social", "procedimiento", "medico_responsable", "fecha_factura", "numero_factura", "vencimiento", "fecha_pago", "valor_pesos", "valor_usd", "estado", "observaciones"]
+    cols = [c for c in preferred if c in df.columns]
+    show = df[cols].copy()
     for col in ["fecha_factura", "vencimiento", "fecha_pago"]:
-
-
-
         if col in show.columns:
-
-
-
-            show[col] = pd.to_datetime(show[col], errors="coerce").dt.strftime("%d/%m/%Y")
-
-
-
-            show[col] = show[col].fillna("")
-
-
-
-    for col in ["valor_pesos"]:
-
-
-
-        if col in show.columns:
-
-
-
-            show[col] = show[col].apply(fmt_money)
-
-
-
+            show[col] = pd.to_datetime(show[col], errors="coerce").dt.strftime("%d/%m/%Y").fillna("")
+    if "valor_pesos" in show.columns:
+        show["valor_pesos"] = show["valor_pesos"].apply(fmt_money)
     if "valor_usd" in show.columns:
-
-
-
         show["valor_usd"] = show["valor_usd"].apply(lambda x: f"USD {money(x):,.2f}")
+    return show.rename(columns={c: labels.get(c, c.replace("_", " ").title()) for c in show.columns})
 
+def apply_facturacion_filters(df: pd.DataFrame, module_name: str) -> pd.DataFrame:
+    st.subheader("Filtros profesionales")
+    f1, f2, f3, f4 = st.columns(4)
+    with f1:
+        buscar = st.text_input("Buscar paciente / texto", key=f"fact_buscar_{module_name}")
+        obra = st.selectbox("Obra social", unique_options(df, "obra_social", "Todas"), key=f"fact_obra_{module_name}")
+    with f2:
+        procedimiento = st.selectbox("Procedimiento", unique_options(df, "procedimiento", "Todos"), key=f"fact_proc_{module_name}")
+        medico = st.selectbox("Médico", unique_options(df, "medico_responsable", "Todos"), key=f"fact_medico_{module_name}")
+    with f3:
+        estado = st.selectbox("Estado", unique_options(df, "estado", "Todos"), key=f"fact_estado_{module_name}")
+        desde = st.date_input("Desde", value=date.today() - timedelta(days=3650), key=f"fact_desde_{module_name}")
+    with f4:
+        hasta = st.date_input("Hasta", value=date.today() + timedelta(days=3650), key=f"fact_hasta_{module_name}")
+        solo_vencidas = st.checkbox("Solo vencidas", value=False, key=f"fact_vencidas_{module_name}")
 
-
-    
-
-
-
-    show = show.rename(columns={c: labels.get(c, c.replace("_", " ").title()) for c in show.columns})
-
-
-
-    return show
-
-
+    filtered = df.copy()
+    if buscar:
+        mask = filtered.astype(str).apply(lambda col: col.str.contains(buscar, case=False, na=False)).any(axis=1)
+        filtered = filtered[mask]
+    if obra != "Todas" and "obra_social" in filtered.columns:
+        filtered = filtered[filtered["obra_social"].astype(str) == obra]
+    if procedimiento != "Todos" and "procedimiento" in filtered.columns:
+        filtered = filtered[filtered["procedimiento"].astype(str) == procedimiento]
+    if medico != "Todos" and "medico_responsable" in filtered.columns:
+        filtered = filtered[filtered["medico_responsable"].astype(str) == medico]
+    if estado != "Todos" and "estado" in filtered.columns:
+        filtered = filtered[filtered["estado"].astype(str) == estado]
+    if "fecha_factura" in filtered.columns:
+        fechas = pd.to_datetime(filtered["fecha_factura"], errors="coerce")
+        filtered = filtered[fechas.isna() | ((fechas >= pd.Timestamp(desde)) & (fechas <= pd.Timestamp(hasta)))]
+    if solo_vencidas and "vencimiento" in filtered.columns:
+        venc = pd.to_datetime(filtered["vencimiento"], errors="coerce")
+        estado_col = filtered["estado"].astype(str).str.lower().str.strip() if "estado" in filtered.columns else pd.Series([""] * len(filtered), index=filtered.index)
+        filtered = filtered[venc.notna() & (venc < pd.Timestamp.today().normalize()) & (~estado_col.isin(["completo", "pagado", "cobrado", "anulado"]))]
+    return filtered
 
 def render_facturacion_pro(module_name: str, cfg: Dict[str, Any]) -> None:
-
-
-
     table = cfg["table"]
-
-
-
     render_header()
-
-
-
     st.header(module_name)
-
-
-
     st.caption(cfg["descripcion"])
-
-
-
     labels = get_fact_labels(module_name, cfg)
 
-
-
-    tab_panel, tab_cargar, tab_importar, tab_columnas, tab_exportar = st.tabs([
-
-
-
-        "📊 Panel PRO",
-
-
-
-        "➕ Cargar",
-
-
-
-        "📥 Importar",
-
-
-
-        "🏷️ Editar columnas",
-
-
-
-        "📤 Exportar",
-
-
-
+    tab_panel, tab_cargar, tab_importar, tab_editar, tab_columnas, tab_exportar = st.tabs([
+        "📊 Panel PRO", "➕ Cargar", "📥 Importar", "✏️ Editar / Eliminar", "🏷️ Editar columnas", "📤 Exportar"
     ])
 
-
-
     with tab_panel:
-
-
-
         df = add_balance_columns(get_df(table))
-
-
-
         if df.empty:
-
-
-
             st.warning("No hay registros cargados.")
-
-
-
-            return
-
-
-
-        filtered = apply_filters(df, module_name)
-
-
-
-        total_facturado = filtered["valor_pesos"].apply(money).sum()
-
-
-
-        cobrado = filtered[
-
-
-
-            filtered["estado"].astype(str).str.lower().isin(
-
-
-
-                ["completo", "pagado", "cobrado"]
-
-
-
-            )
-
-
-
-        ]["valor_pesos"].apply(money).sum()
-
-
-
-        pendiente = total_facturado - cobrado
-
-
-
-        pacientes = len(filtered)
-
-
-
-        ticket_promedio = (
-
-
-
-            total_facturado / pacientes
-
-
-
-        if pacientes > 0 else 0
-
-
-
-        )
-
-
-
-        c1,c2,c3,c4,c5 = st.columns(5)
-
-
-
-        c1.metric("💰 Facturado", fmt_money(total_facturado))
-
-
-
-        c2.metric("✅ Cobrado", fmt_money(cobrado))
-
-
-
-        c3.metric("⏳ Pendiente", fmt_money(pendiente))
-
-
-
-        c4.metric("👥 Pacientes", pacientes)
-
-
-
-        c5.metric("📊 Ticket Promedio", fmt_money(ticket_promedio))
-
-
-
-        if buscar:
-
-
-
-            mask = filtered.astype(str).apply(
-
-
-
-                lambda col: col.str.contains(buscar, case=False, na=False)
-
-
-
-            ).any(axis=1)
-
-
-
-            filtered = filtered[mask]
-
-
-
-        if obra != "Todas" and "obra_social" in filtered.columns:
-
-
-
-            filtered = filtered[filtered["obra_social"].astype(str) == obra]
-
-
-
-        if procedimiento != "Todos" and "procedimiento" in filtered.columns:
-
-
-
-            filtered = filtered[filtered["procedimiento"].astype(str) == procedimiento]
-
-
-
-        if medico != "Todos" and "medico_responsable" in filtered.columns:
-
-
-
-            filtered = filtered[filtered["medico_responsable"].astype(str) == medico]
-
-
-
-        if estado != "Todos" and "estado" in filtered.columns:
-
-
-
-            filtered = filtered[filtered["estado"].astype(str) == estado]
-
-
-
-        if "fecha_factura" in filtered.columns:
-
-
-
-            fechas = pd.to_datetime(filtered["fecha_factura"], errors="coerce")
-
-
-
-            filtered = filtered[
-
-
-
-                fechas.isna()
-
-
-
-                | ((fechas >= pd.Timestamp(fecha_desde)) & (fechas <= pd.Timestamp(fecha_hasta)))
-
-
-
-            ]
-
-
-
-        total_facturado = filtered["valor_pesos"].apply(money).sum() if "valor_pesos" in filtered.columns else 0
-
-
-
-        total_usd = filtered["valor_usd"].apply(money).sum() if "valor_usd" in filtered.columns else 0
-
-
-
-        cantidad = len(filtered)
-
-
-
-        ticket = total_facturado / cantidad if cantidad else 0
-
-
-
-        estado_col = filtered["estado"].astype(str).str.lower().str.strip() if "estado" in filtered.columns else pd.Series([], dtype=str)
-
-
-
-        total_cobrado = filtered[estado_col.isin(["completo", "cobrado", "pagado"])]["valor_pesos"].apply(money).sum() if "valor_pesos" in filtered.columns and not filtered.empty else 0
-
-
-
-        total_pendiente = max(0, total_facturado - total_cobrado)
-
-
-
-        vencidas = 0
-
-
-
-        if "vencimiento" in filtered.columns:
-
-
-
-            venc = pd.to_datetime(filtered["vencimiento"], errors="coerce")
-
-
-
-            hoy = pd.Timestamp.today().normalize()
-
-
-
-            vencidas = int((venc.notna() & (venc < hoy) & (~estado_col.isin(["completo", "cobrado", "pagado", "anulado"]))).sum())
-
-
-
-        st.markdown("### Indicadores de facturación")
-
-
-
+        else:
+            filtered = apply_facturacion_filters(df, module_name)
+            total_facturado = filtered["valor_pesos"].apply(money).sum() if "valor_pesos" in filtered.columns else 0
+            estado_col = filtered["estado"].astype(str).str.lower().str.strip() if "estado" in filtered.columns else pd.Series([""] * len(filtered), index=filtered.index)
+            total_cobrado = filtered.loc[estado_col.isin(["completo", "pagado", "cobrado"]), "valor_pesos"].apply(money).sum() if "valor_pesos" in filtered.columns and not filtered.empty else 0
+            total_pendiente = max(0, total_facturado - total_cobrado)
+            cantidad = len(filtered)
+            ticket = total_facturado / cantidad if cantidad else 0
+            vencidas = 0
+            if "vencimiento" in filtered.columns:
+                venc = pd.to_datetime(filtered["vencimiento"], errors="coerce")
+                vencidas = int((venc.notna() & (venc < pd.Timestamp.today().normalize()) & (~estado_col.isin(["completo", "pagado", "cobrado", "anulado"]))).sum())
+
+            st.markdown("### Indicadores de facturación")
             k1, k2, k3, k4, k5, k6 = st.columns(6)
-
-
-
             k1.metric("Total facturado", fmt_money(total_facturado))
-
-
-
             k2.metric("Total cobrado", fmt_money(total_cobrado))
-
-
-
             k3.metric("Total pendiente", fmt_money(total_pendiente))
-
-
-
             k4.metric("Facturas vencidas", vencidas)
-
-
-
             k5.metric("Pacientes", cantidad)
-
-
-
             k6.metric("Ticket promedio", fmt_money(ticket))
 
-
-
-        st.divider()
-
-
-
-        st.markdown("### Tabla limpia")
-
-
-
-        st.dataframe(
-
-
-
-            format_facturacion_table(filtered, labels),
-
-
-
-            use_container_width=True,
-
-
-
-            hide_index=True,
-
-
-
-        )
-
-
-
-        st.divider()
-
-
-
-        st.markdown("### Gráficos útiles")
-
-
-
-        g1, g2 = st.columns(2)
-
-
-
-        if "fecha_factura" in filtered.columns and "valor_pesos" in filtered.columns:
-
-
-
-            graph = filtered.copy()
-
-
-            graph["fecha_factura"] = pd.to_datetime(graph["fecha_factura"], errors="coerce")
-
-
-
-            graph = graph[graph["fecha_factura"].notna()]
-
-
-
-            if not graph.empty:
-
-
-
-                graph["Mes"] = graph["fecha_factura"].dt.to_period("M").astype(str)
-
-
-
-                chart = graph.groupby("Mes")["valor_pesos"].sum().reset_index()
-
-
-
-                fig = px.bar(chart, x="Mes", y="valor_pesos", title="Facturación por mes")
-
-
-
-                g1.plotly_chart(fig, use_container_width=True)
-
-
-
-        if "obra_social" in filtered.columns and "valor_pesos" in filtered.columns:
-
-
-
-            chart = filtered.groupby("obra_social")["valor_pesos"].apply(lambda x: x.apply(money).sum()).reset_index()
-
-
-
-            chart = chart.sort_values("valor_pesos", ascending=False).head(10)
-
-
-
-            fig = px.bar(chart, x="obra_social", y="valor_pesos", title="Facturación por obra social")
-
-
-
-            g2.plotly_chart(fig, use_container_width=True)
-
-
-
-        g3, g4 = st.columns(2)
-
-
-
-            if "medico_responsable" in filtered.columns and "valor_pesos" in filtered.columns:
-
-
-
-                chart = filtered.groupby("medico_responsable")["valor_pesos"].apply(lambda x: x.apply(money).sum()).reset_index()
-
-
-
-                chart = chart.sort_values("valor_pesos", ascending=False).head(10)
-
-
-
+            st.divider()
+            st.markdown("### Tabla profesional")
+            st.dataframe(format_facturacion_table(filtered, labels), use_container_width=True, hide_index=True, height=460)
+
+            st.divider()
+            st.markdown("### Gráficos útiles")
+            g1, g2 = st.columns(2)
+            if "fecha_factura" in filtered.columns and "valor_pesos" in filtered.columns:
+                graph = filtered.copy()
+                graph["fecha_factura"] = pd.to_datetime(graph["fecha_factura"], errors="coerce")
+                graph = graph[graph["fecha_factura"].notna()]
+                if not graph.empty:
+                    graph["Mes"] = graph["fecha_factura"].dt.to_period("M").astype(str)
+                    chart = graph.groupby("Mes")["valor_pesos"].sum().reset_index()
+                    fig = px.bar(chart, x="Mes", y="valor_pesos", title="Facturación por mes")
+                    g1.plotly_chart(fig, use_container_width=True)
+            if "obra_social" in filtered.columns and "valor_pesos" in filtered.columns and not filtered.empty:
+                chart = filtered.groupby("obra_social")["valor_pesos"].sum().reset_index().sort_values("valor_pesos", ascending=False).head(10)
+                fig = px.bar(chart, x="obra_social", y="valor_pesos", title="Top obras sociales")
+                g2.plotly_chart(fig, use_container_width=True)
+            g3, g4 = st.columns(2)
+            if "medico_responsable" in filtered.columns and "valor_pesos" in filtered.columns and not filtered.empty:
+                chart = filtered.groupby("medico_responsable")["valor_pesos"].sum().reset_index().sort_values("valor_pesos", ascending=False).head(10)
                 fig = px.bar(chart, x="medico_responsable", y="valor_pesos", title="Facturación por médico")
-
-
-
                 g3.plotly_chart(fig, use_container_width=True)
-
-
-
-        if "procedimiento" in filtered.columns and "valor_pesos" in filtered.columns:
-
-
-
-            chart = filtered.groupby("procedimiento")["valor_pesos"].apply(lambda x: x.apply(money).sum()).reset_index()
-
-
-
-            chart = chart.sort_values("valor_pesos", ascending=False).head(10)
-
-
-
-            fig = px.bar(chart, x="procedimiento", y="valor_pesos", title="Facturación por procedimiento")
-
-
-
-            g4.plotly_chart(fig, use_container_width=True)
-
-
+            if "procedimiento" in filtered.columns and "valor_pesos" in filtered.columns and not filtered.empty:
+                chart = filtered.groupby("procedimiento")["valor_pesos"].sum().reset_index().sort_values("valor_pesos", ascending=False).head(10)
+                fig = px.bar(chart, x="procedimiento", y="valor_pesos", title="Facturación por procedimiento")
+                g4.plotly_chart(fig, use_container_width=True)
 
     with tab_cargar:
-
-
-
-        st.subheader("Nuevo registro")
-
-
-
-        with st.form(f"form_add_{table}", clear_on_submit=True):
-
-
-
-            data: Dict[str, Any] = {}
-
-
-
-            cols = st.columns(2)
-
-
-
-            for i, field in enumerate(cfg["fields"]):
-
-
-
-                with cols[i % 2]:
-
-
-
-                    raw = input_field(field, f"add_{table}")
-
-
-
-                    data[field[0]] = clean_for_db(raw, field[1])
-
-
-
-            submitted = st.form_submit_button("Guardar registro", type="primary")
-
-
-
-            if submitted:
-
-
-
-                errors = validate_required(cfg, data)
-
-
-
-                if errors:
-
-
-
-                    st.error("Faltan completar campos obligatorios: " + ", ".join(errors))
-
-
-
-                else:
-
-
-
-                    insert_row(table, data)
-
-
-
-                    st.success("Registro guardado correctamente.")
-
-
-
-                    st.rerun()
-
-
+        render_add_form(module_name, cfg)
 
     with tab_importar:
-
-
-
         render_importer(module_name, cfg)
 
-
+    with tab_editar:
+        render_edit_delete(module_name, cfg)
 
     with tab_columnas:
-
-
-
         st.subheader("Editar nombres visibles de columnas")
-
-
-
         with st.form(f"form_labels_{table}"):
-
-
-
             new_labels = {}
-
-
-
             cols = st.columns(2)
-
-
-
             for i, field in enumerate(cfg["fields"]):
-
-
-
                 name = field[0]
-
-
-
                 with cols[i % 2]:
-
-
-
-                    new_labels[name] = st.text_input(
-
-
-
-                        name,
-
-
-
-                        value=labels.get(name, name.replace("_", " ").title()),
-
-
-
-                        key=f"label_{table}_{name}",
-
-
-
-                    )
-
-
-
+                    new_labels[name] = st.text_input(name, value=labels.get(name, name.replace("_", " ").title()), key=f"label_{table}_{name}")
             save_labels = st.form_submit_button("Guardar nombres de columnas", type="primary")
-
-
-
             if save_labels:
-
-
-
                 set_setting(f"labels_{table}", new_labels)
-
-
-
                 st.success("Nombres de columnas actualizados.")
-
-
-
                 st.rerun()
 
-
-
     with tab_exportar:
-
-
-
         df = add_balance_columns(get_df(table))
-
-
-
         if df.empty:
-
-
-
             st.info("No hay datos para exportar.")
-
-
-
         else:
-
-
-
             export_df = format_facturacion_table(df, labels)
-
-
-
             csv = export_df.to_csv(index=False).encode("utf-8-sig")
-
-
-
             st.download_button("Descargar CSV", data=csv, file_name=f"{table}.csv", mime="text/csv")
-
-
-
             xlsx_path = Path(f"{table}.xlsx")
-
-
-
             export_df.to_excel(xlsx_path, index=False)
-
-
-
             with open(xlsx_path, "rb") as f:
+                st.download_button("Descargar Excel", data=f, file_name=f"{table}.xlsx", mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
 
+def render_add_form(module_name: str, cfg: Dict[str, Any]) -> None:
+    table = cfg["table"]
+    st.subheader("Nuevo registro")
+    with st.form(f"form_add_{table}", clear_on_submit=True):
+        data: Dict[str, Any] = {}
+        cols = st.columns(2)
+        for i, field in enumerate(cfg["fields"]):
+            with cols[i % 2]:
+                raw = input_field(field, f"add_{table}")
+                data[field[0]] = clean_for_db(raw, field[1])
+        submitted = st.form_submit_button("Guardar registro", type="primary")
+        if submitted:
+            errors = validate_required(cfg, data)
+            if errors:
+                st.error("Faltan completar campos obligatorios: " + ", ".join(errors))
+            else:
+                insert_row(table, data)
+                st.success("Registro guardado correctamente.")
+                st.rerun()
 
+def render_edit_delete(module_name: str, cfg: Dict[str, Any]) -> None:
+    table = cfg["table"]
+    df = get_df(table)
+    if df.empty:
+        st.warning("No hay registros para editar.")
+        return
+    ids = df["id"].tolist()
+    selected_id = st.selectbox("Seleccionar ID", ids, key=f"edit_select_{table}")
+    row = df[df["id"] == selected_id].iloc[0].to_dict()
+    st.caption(f"Creado: {row.get('created_at', '')} | Última actualización: {row.get('updated_at', '')}")
+    with st.form(f"form_edit_{table}_{selected_id}"):
+        data: Dict[str, Any] = {}
+        cols = st.columns(2)
+        for i, field in enumerate(cfg["fields"]):
+            with cols[i % 2]:
+                raw = input_field(field, f"edit_{table}_{selected_id}", row)
+                data[field[0]] = clean_for_db(raw, field[1])
+        save = st.form_submit_button("Guardar cambios", type="primary")
+        if save:
+            errors = validate_required(cfg, data)
+            if errors:
+                st.error("Faltan completar campos obligatorios: " + ", ".join(errors))
+            else:
+                update_row(table, int(selected_id), data)
+                st.success("Registro actualizado correctamente.")
+                st.rerun()
+    st.warning("Zona de eliminación")
+    confirm = st.checkbox("Confirmo que quiero eliminar este registro", key=f"confirm_delete_{table}_{selected_id}")
+    if st.button("Eliminar registro", disabled=not confirm, type="secondary", key=f"delete_btn_{table}_{selected_id}"):
+        delete_row(table, int(selected_id))
+        st.success("Registro eliminado.")
+        st.rerun()
 
-                st.download_button(
-
-
-
-                    "Descargar Excel",
-
-
-
-                    data=f,
-
-
-
-                    file_name=f"{table}.xlsx",
-
-
-
-                    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-
-
-
-                )
 def render_dashboard() -> None:
     render_header()
     st.markdown("### Resumen General")
     dfs = {name: add_balance_columns(get_df(cfg["table"])) for name, cfg in MODULES.items()}
-    caja_bancos = 0.0
-    ingresos_mes = 0.0
-    egresos_mes = 0.0
-    facturacion_mes = 0.0
-    cobrado_mes = 0.0
-    a_cobrar = 0.0
-    a_pagar = 0.0
-    deuda_total = 0.0
-    vencidos = 0
-    tareas_pend = 0
-    pacientes_mes = 0
+    caja_bancos = ingresos_mes = egresos_mes = facturacion_mes = cobrado_mes = a_cobrar = a_pagar = deuda_total = 0.0
+    vencidos = tareas_pend = pacientes_mes = 0
     medicos_activos = set()
     hoy = pd.Timestamp.today().normalize()
     inicio_mes = hoy.replace(day=1)
@@ -1938,44 +920,35 @@ def render_dashboard() -> None:
                 ingresos_mes += df.loc[es_mes, "ingreso"].apply(money).sum()
             if "egreso" in df.columns:
                 egresos_mes += df.loc[es_mes, "egreso"].apply(money).sum()
-        if name in ["Facturación VMR", "Facturación VM"]:
-            if "valor_pesos" in df.columns:
-                total_facturado = df["valor_pesos"].apply(money).sum()
-                facturacion_mes += df.loc[es_mes, "valor_pesos"].apply(money).sum()
-                estado = df["estado"].astype(str).str.lower().str.strip() if "estado" in df.columns else pd.Series([""] * len(df), index=df.index)
-                cobrado = df[estado.isin(["completo", "cobrado", "pagado"])]["valor_pesos"].apply(money).sum()
-                cobrado_mes += df.loc[es_mes & estado.isin(["completo", "cobrado", "pagado"]), "valor_pesos"].apply(money).sum()
-                a_cobrar += max(0, total_facturado - cobrado)
-                pacientes_mes += int(es_mes.sum())
-                if "medico_responsable" in df.columns:
-                    medicos_activos.update(
-                        df.loc[es_mes, "medico_responsable"]
-                        .dropna()
-                        .astype(str)
-                        .str.strip()
-                        .replace("", pd.NA)
-                        .dropna()
-                        .tolist()
-                    )
-        if name in ["Cuenta Corriente VMR", "Cuenta Corriente VM"]:
-            if "tipo" in df.columns and "importe" in df.columns:
-                tipo = df["tipo"].astype(str).str.lower()
-                pagado = df["pagado"].apply(money) if "pagado" in df.columns else 0
-                saldo = df["importe"].apply(money) - pagado
-                a_cobrar += saldo[tipo.eq("a cobrar")].sum()
-                a_pagar += saldo[tipo.eq("a pagar")].sum()
+        if name in ["Facturación VMR", "Facturación VM"] and "valor_pesos" in df.columns:
+            total_facturado = df["valor_pesos"].apply(money).sum()
+            facturacion_mes += df.loc[es_mes, "valor_pesos"].apply(money).sum()
+            estado = df["estado"].astype(str).str.lower().str.strip() if "estado" in df.columns else pd.Series([""] * len(df), index=df.index)
+            cobrado = df.loc[estado.isin(["completo", "cobrado", "pagado"]), "valor_pesos"].apply(money).sum()
+            cobrado_mes += df.loc[es_mes & estado.isin(["completo", "cobrado", "pagado"]), "valor_pesos"].apply(money).sum()
+            a_cobrar += max(0, total_facturado - cobrado)
+            pacientes_mes += int(es_mes.sum())
+            if "medico_responsable" in df.columns:
+                medicos_activos.update(df.loc[es_mes, "medico_responsable"].dropna().astype(str).str.strip().replace("", pd.NA).dropna().tolist())
+        if name in ["Cuenta Corriente VMR", "Cuenta Corriente VM"] and "tipo" in df.columns and "importe" in df.columns:
+            tipo = df["tipo"].astype(str).str.lower()
+            pagado = df["pagado"].apply(money) if "pagado" in df.columns else 0
+            saldo = df["importe"].apply(money) - pagado
+            a_cobrar += saldo[tipo.eq("a cobrar")].sum()
+            a_pagar += saldo[tipo.eq("a pagar")].sum()
         if name in ["Deudas Impositivas VMR", "Deudas Impositivas VM", "Planes de pagos y préstamos", "Pagos pendientes Vitae", "Deuda total", "Honorarios médicos"]:
             if "saldo" in df.columns:
                 deuda_total += df["saldo"].apply(money).sum()
             elif "importe" in df.columns:
                 pagado = df["pagado"].apply(money) if "pagado" in df.columns else 0
-                deuda_total += max(0, df["importe"].apply(money).sum() - pagado.sum())
+                deuda_total += max(0, df["importe"].apply(money).sum() - (pagado.sum() if hasattr(pagado, "sum") else 0))
         if "vencimiento" in df.columns:
             venc = pd.to_datetime(df["vencimiento"], errors="coerce")
             estado = df["estado"].astype(str).str.lower().str.strip() if "estado" in df.columns else pd.Series([""] * len(df), index=df.index)
             vencidos += int((venc.notna() & (venc < hoy) & (~estado.isin(estados_cerrados))).sum())
         if name == "Tareas Pendientes" and "estado" in df.columns:
-            tareas_pend += int(df[~df["estado"].isin(["Finalizada", "Cancelada"])].shape[0])
+            tareas_pend += int((~df["estado"].isin(["Finalizada", "Cancelada"])).sum())
+
     resultado_mes = ingresos_mes + cobrado_mes - egresos_mes
     pendiente_cobro = a_cobrar
     promedio_facturacion = facturacion_mes / pacientes_mes if pacientes_mes > 0 else 0
@@ -2008,26 +981,15 @@ def render_dashboard() -> None:
         elif "importe" in df.columns:
             total = df["importe"].apply(money).sum()
         else:
-           total = 0
+            total = 0
         if total > 0:
-            rows.append({
-                "Módulo": name,
-                "Empresa": MODULES[name]["empresa"],
-                "Total": total,
-                "Registros": len(df),
-            })
+            rows.append({"Módulo": name, "Empresa": MODULES[name]["empresa"], "Total": total, "Registros": len(df)})
     resumen = pd.DataFrame(rows)
     if resumen.empty:
         st.info("Todavía no hay datos económicos cargados.")
     else:
         st.dataframe(resumen, use_container_width=True, hide_index=True)
-        fig = px.bar(
-            resumen,
-            x="Módulo",
-            y="Total",
-            color="Empresa",
-            title="Importes registrados por módulo"
-        )
+        fig = px.bar(resumen, x="Módulo", y="Total", color="Empresa", title="Importes registrados por módulo")
         fig.update_layout(xaxis_tickangle=-35)
         st.plotly_chart(fig, use_container_width=True)
     st.divider()
@@ -2042,13 +1004,7 @@ def render_dashboard() -> None:
         limite = hoy + pd.Timedelta(days=30)
         temp = temp[(temp["vencimiento_dt"] >= hoy) & (temp["vencimiento_dt"] <= limite)]
         for _, row in temp.iterrows():
-            venc_rows.append({
-                "Módulo": name,
-                "Vencimiento": row.get("vencimiento_dt").strftime(DATE_FMT),
-                "Detalle": row.get("concepto") or row.get("detalle") or row.get("tarea") or row.get("acreedor") or row.get("afiliado") or row.get("procedimiento") or "",
-                "Importe": row.get("importe") or row.get("saldo") or row.get("valor") or row.get("valor_pesos") or 0,
-                "Estado": row.get("estado", ""),
-            })
+            venc_rows.append({"Módulo": name, "Vencimiento": row.get("vencimiento_dt").strftime(DATE_FMT), "Detalle": row.get("concepto") or row.get("detalle") or row.get("tarea") or row.get("acreedor") or row.get("afiliado") or row.get("procedimiento") or "", "Importe": row.get("importe") or row.get("saldo") or row.get("valor") or row.get("valor_pesos") or 0, "Estado": row.get("estado", "")})
     venc_df = pd.DataFrame(venc_rows)
     if venc_df.empty:
         st.success("No hay vencimientos cargados para los próximos 30 días.")
@@ -2064,31 +1020,11 @@ def render_module(module_name: str) -> None:
     render_header()
     st.header(module_name)
     st.caption(cfg["descripcion"])
-
     tab1, tab2, tab3, tab4, tab5 = st.tabs(["➕ Cargar", "📥 Importar planilla", "📋 Registros", "✏️ Editar / Eliminar", "📤 Exportar"])
-
     with tab1:
-        st.subheader("Nuevo registro")
-        with st.form(f"form_add_{table}", clear_on_submit=True):
-            data: Dict[str, Any] = {}
-            cols = st.columns(2)
-            for i, field in enumerate(cfg["fields"]):
-                with cols[i % 2]:
-                    raw = input_field(field, f"add_{table}")
-                    data[field[0]] = clean_for_db(raw, field[1])
-            submitted = st.form_submit_button("Guardar registro", type="primary")
-            if submitted:
-                errors = validate_required(cfg, data)
-                if errors:
-                    st.error("Faltan completar campos obligatorios: " + ", ".join(errors))
-                else:
-                    insert_row(table, data)
-                    st.success("Registro guardado correctamente.")
-                    st.rerun()
-
+        render_add_form(module_name, cfg)
     with tab2:
         render_importer(module_name, cfg)
-
     with tab3:
         df = add_balance_columns(get_df(table))
         if df.empty:
@@ -2110,166 +1046,23 @@ def render_module(module_name: str) -> None:
                 m4.metric("Total importe", fmt_money(filtered["importe"].apply(money).sum()))
             elif "valor_pesos" in filtered.columns:
                 m4.metric("Total facturado", fmt_money(filtered["valor_pesos"].apply(money).sum()))
-
-            show = filtered.copy()
-
-
-
-            cols = [
-
-
-
-                "afiliado",
-
-
-
-                "obra_social",
-
-
-
-                "procedimiento",
-
-
-
-                "medico_responsable",
-
-
-
-                "fecha_factura",
-
-
-
-                "valor_pesos",
-
-
-
-                "estado"
-
-
-
-            ]
-
-
-
-            show = show[[c for c in cols if c in show.columns]]
-
-
-
-            show = show.rename(columns={
-
-
-
-                "afiliado": "Paciente",
-
-
-
-                "obra_social": "Obra Social",
-
-
-
-                "procedimiento": "Procedimiento",
-
-
-
-                "medico_responsable": "Médico",
-
-
-
-                "fecha_factura": "Fecha Factura",
-
-
-
-                "valor_pesos": "Valor Facturado",
-
-
-
-                "estado": "Estado"
-
-
-
-            })
-
-
-
-            if "Valor Facturado" in show.columns:
-
-
-
-                show["Valor Facturado"] = show["Valor Facturado"].apply(fmt_money)
-
-
-
-            st.dataframe(
-
-
-
-                show,
-
-
-
-                use_container_width=True,
-
-
-
-                hide_index=True
-
-
-
-            )
-
+            show_module_table(filtered, cfg, height=430)
             fecha_col = first_available_date_col(filtered, module_name)
             if fecha_col and not filtered.empty:
                 graph = filtered.copy()
                 graph[fecha_col] = pd.to_datetime(graph[fecha_col], errors="coerce")
                 graph = graph[graph[fecha_col].notna()]
                 y_col = None
-                if "saldo_movimiento" in graph.columns:
-                    y_col = "saldo_movimiento"
-                elif "saldo" in graph.columns:
-                    y_col = "saldo"
-                elif "importe" in graph.columns:
-                    y_col = "importe"
-                elif "valor_pesos" in graph.columns:
-                    y_col = "valor_pesos"
+                for candidate in ["saldo_movimiento", "saldo", "importe", "valor_pesos", "valor", "valor_mensual"]:
+                    if candidate in graph.columns:
+                        y_col = candidate
+                        break
                 if y_col and not graph.empty:
                     chart = graph.groupby(graph[fecha_col].dt.date)[y_col].sum().reset_index()
                     fig = px.line(chart, x=fecha_col, y=y_col, markers=True, title=f"Evolución: {module_name}")
                     st.plotly_chart(fig, use_container_width=True)
-
     with tab4:
-        df = get_df(table)
-        if df.empty:
-            st.warning("No hay registros para editar.")
-        else:
-            ids = df["id"].tolist()
-            selected_id = st.selectbox("Seleccionar ID", ids, key=f"edit_select_{table}")
-            row = df[df["id"] == selected_id].iloc[0].to_dict()
-            st.caption(f"Creado: {row.get('created_at', '')} | Última actualización: {row.get('updated_at', '')}")
-
-            with st.form(f"form_edit_{table}"):
-                data: Dict[str, Any] = {}
-                cols = st.columns(2)
-                for i, field in enumerate(cfg["fields"]):
-                    with cols[i % 2]:
-                        raw = input_field(field, f"edit_{table}_{selected_id}", row)
-                        data[field[0]] = clean_for_db(raw, field[1])
-                save = st.form_submit_button("Guardar cambios", type="primary")
-                if save:
-                    errors = validate_required(cfg, data)
-                    if errors:
-                        st.error("Faltan completar campos obligatorios: " + ", ".join(errors))
-                    else:
-                        update_row(table, int(selected_id), data)
-                        st.success("Registro actualizado correctamente.")
-                        st.rerun()
-
-            st.warning("Zona de eliminación")
-            confirm = st.checkbox("Confirmo que quiero eliminar este registro", key=f"confirm_delete_{table}_{selected_id}")
-            if st.button("Eliminar registro", disabled=not confirm, type="secondary"):
-                delete_row(table, int(selected_id))
-                st.success("Registro eliminado.")
-                st.rerun()
-
+        render_edit_delete(module_name, cfg)
     with tab5:
         df = add_balance_columns(get_df(table))
         if df.empty:
@@ -2282,31 +1075,22 @@ def render_module(module_name: str) -> None:
             xlsx_path = Path(f"{table}.xlsx")
             export_df.to_excel(xlsx_path, index=False)
             with open(xlsx_path, "rb") as f:
-                st.download_button(
-                    "Descargar Excel",
-                    data=f,
-                    file_name=f"{table}.xlsx",
-                    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                )
+                st.download_button("Descargar Excel", data=f, file_name=f"{table}.xlsx", mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
 
 def render_admin() -> None:
     render_header()
     st.header("⚙️ Administración")
     st.write("Herramientas de mantenimiento local.")
-
     st.subheader("Base de datos")
     st.code(str(DB_PATH.resolve()))
-
     if st.button("Inicializar / reparar tablas"):
         init_db()
         st.success("Tablas verificadas correctamente.")
-
     st.subheader("Carga de datos de ejemplo")
     if st.button("Crear ejemplos mínimos"):
         seed_examples()
         st.success("Datos de ejemplo creados.")
         st.rerun()
-
     st.subheader("Exportación global")
     all_data = {}
     for name, cfg in MODULES.items():
@@ -2319,15 +1103,9 @@ def render_admin() -> None:
             for sheet, df in all_data.items():
                 df.to_excel(writer, sheet_name=sheet, index=False)
         with open(export_path, "rb") as f:
-            st.download_button(
-                "Descargar Excel global",
-                data=f,
-                file_name="vitae_export_global.xlsx",
-                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-            )
+            st.download_button("Descargar Excel global", data=f, file_name="vitae_export_global.xlsx", mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
     else:
         st.info("Todavía no hay datos para exportación global.")
-
     st.subheader("Borrado total")
     st.error("Esta acción elimina todos los registros de todos los módulos.")
     erase = st.checkbox("Confirmo borrado total de la base local")
@@ -2343,6 +1121,7 @@ def seed_examples() -> None:
     examples = [
         ("caja_vmr", {"fecha": date.today().strftime(DATE_FMT), "concepto": "Ingreso muestra fertilidad", "categoria": "Ingreso", "medio": "Efectivo", "ingreso": 150000, "egreso": 0, "responsable": "Administración", "observaciones": "Ejemplo"}),
         ("banco_galicia_vm", {"fecha": date.today().strftime(DATE_FMT), "concepto": "Pago proveedor quirófano", "tipo_movimiento": "Débito", "referencia": "OP-001", "ingreso": 0, "egreso": 80000, "conciliado": 1, "observaciones": "Ejemplo"}),
+        ("facturacion_vmr", {"mes": date.today().strftime("%Y-%m"), "afiliado": "Paciente ejemplo", "obra_social": "OSDE", "procedimiento": "Aspiración folicular", "medico_responsable": "Dr/a Ejemplo", "fecha_factura": date.today().strftime(DATE_FMT), "numero_factura": "F-001", "vencimiento": (date.today() + timedelta(days=30)).strftime(DATE_FMT), "fecha_pago": "", "valor_pesos": 500000, "valor_usd": 0, "estado": "Pendiente", "observaciones": "Ejemplo"}),
         ("pagos_pendientes_vitae", {"fecha": date.today().strftime(DATE_FMT), "empresa": "VITAE", "proveedor": "Proveedor insumos", "concepto": "Insumos médicos", "importe": 120000, "pagado": 0, "vencimiento": (date.today() + timedelta(days=7)).strftime(DATE_FMT), "prioridad": "Alta", "estado": "Pendiente", "observaciones": "Ejemplo"}),
         ("tareas_pendientes", {"fecha": date.today().strftime(DATE_FMT), "empresa": "VM", "tarea": "Revisar stock quirófano", "responsable": "Enfermería", "prioridad": "Alta", "vencimiento": (date.today() + timedelta(days=3)).strftime(DATE_FMT), "estado": "Pendiente", "observaciones": "Ejemplo"}),
     ]
@@ -2355,12 +1134,9 @@ def seed_examples() -> None:
 
 def main() -> None:
     init_db()
-
     st.sidebar.title("VITAE")
     st.sidebar.caption("Sistema interno de gestión")
-
     page = st.sidebar.radio("Navegación", ["Dashboard Global", "Módulos", "Administración"])
-
     if page == "Dashboard Global":
         render_dashboard()
     elif page == "Módulos":
@@ -2373,7 +1149,6 @@ def main() -> None:
         render_module(module_name)
     else:
         render_admin()
-
     st.sidebar.divider()
     st.sidebar.markdown("**Módulos incluidos**")
     st.sidebar.caption(f"{len(MODULES)} módulos activos")
