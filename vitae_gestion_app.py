@@ -2308,15 +2308,15 @@ def render_agenda_quirofano(module_name: str, cfg: dict) -> None:
                             
                                     errors = validate_required(cfg, data)
                             
-                                    if errors:
+                                        if errors:
+                                
+                                        st.error(
                             
-                                    st.error(
+                                        "Faltan completar campos obligatorios: "
                         
-                                    "Faltan completar campos obligatorios: "
+                                        + ", ".join(errors)
                     
-                                    + ", ".join(errors)
-                
-                            )
+                                )
                 
                         else:
             
