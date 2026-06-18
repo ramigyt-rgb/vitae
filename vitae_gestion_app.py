@@ -2357,24 +2357,25 @@ def render_agenda_quirofano(module_name: str, cfg: dict) -> None:
                 
                                 hide_index=True
                 
-                            )
-        def render_module(module_name: str) -> None:
-                    cfg = MODULES[module_name]
+                            )     
+                                                          
+def render_module(module_name: str) -> None:
+        cfg = MODULES[module_name]
                     
                 
-                    if cfg.get("tipo") == "quirófano":
+        if cfg.get("tipo") == "quirófano":
                     
-                        render_agenda_quirofano(module_name, cfg)
+            render_agenda_quirofano(module_name, cfg)
                     
-                        return
-                    if module_name in ["Facturación VMR", "Facturación VM"]:
-                        render_facturacion_pro(module_name, cfg)
+            return
+        if module_name in ["Facturación VMR", "Facturación VM"]:
+            render_facturacion_pro(module_name, cfg)
                             
-                        return
-                    table = cfg["table"]
-                    render_header()
-                    st.header(module_name)
-                    st.caption(cfg["descripcion"])
+            return
+        table = cfg["table"]
+        render_header()
+        st.header(module_name)
+        st.caption(cfg["descripcion"])
                 
                     tab1, tab2, tab3, tab4, tab5 = st.tabs(["➕ Cargar", "📥 Importar planilla", "📋 Registros", "✏️ Editar / Eliminar", "📤 Exportar"])
                 
