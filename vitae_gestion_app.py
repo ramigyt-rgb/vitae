@@ -2292,7 +2292,7 @@ def render_agenda_quirofano(module_name: str, cfg: dict) -> None:
                                 
                                         with cols[i % 2]:
                                 
-                                            raw = input_field(field, f"add_{table}")
+                                            raw = input_field(field, f"add_{table}_{i}")
                                 
                                             data[field[0]] = clean_for_db(raw, field[1])
                             
