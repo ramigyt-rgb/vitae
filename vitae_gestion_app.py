@@ -2284,47 +2284,47 @@ def render_agenda_quirofano(module_name: str, cfg: dict) -> None:
                     
                                 with st.form(f"form_add_{table}", clear_on_submit=True):
                     
-                                data = {}
+                                    data = {}
+                                
+                                    cols = st.columns(2)
+                                
+                                    for i, field in enumerate(cfg["fields"]):
+                                
+                                        with cols[i % 2]:
+                                
+                                            raw = input_field(field, f"add_{table}")
+                                
+                                            data[field[0]] = clean_for_db(raw, field[1])
                             
-                                cols = st.columns(2)
+                                    submitted = st.form_submit_button(
                             
-                                for i, field in enumerate(cfg["fields"]):
+                                    "Guardar cirugía",
                             
-                                    with cols[i % 2]:
+                                    type="primary"
                             
-                                        raw = input_field(field, f"add_{table}")
+                                )
                             
-                                        data[field[0]] = clean_for_db(raw, field[1])
+                                if submitted:
+                            
+                                    errors = validate_required(cfg, data)
+                            
+                                    if errors:
+                            
+                                    st.error(
                         
-                                submitted = st.form_submit_button(
-                        
-                                "Guardar cirugía",
-                        
-                                type="primary"
-                        
-                            )
-                        
-                            if submitted:
-                        
-                                errors = validate_required(cfg, data)
-                        
-                                if errors:
-                        
-                                st.error(
+                                    "Faltan completar campos obligatorios: "
                     
-                                "Faltan completar campos obligatorios: "
+                                    + ", ".join(errors)
                 
-                                + ", ".join(errors)
+                            )
+                
+                        else:
             
-                        )
+                        insert_row(table, data)
             
-                    else:
-        
-                    insert_row(table, data)
-        
-                    st.success("Cirugía guardada correctamente.")
-        
-                    st.rerun()
+                        st.success("Cirugía guardada correctamente.")
+            
+                        st.rerun()
 
     with tab_registros:
 
