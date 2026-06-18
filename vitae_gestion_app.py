@@ -2127,6 +2127,7 @@ def render_dashboard() -> None:
                 "Módulo": name,
                 "Vencimiento": row.get("vencimiento_dt").strftime(DATE_FMT),
                 "Detalle": row.get("concepto") or row.get("detalle") or row.get("tarea") or row.get("acreedor") or row.get("afiliado") or row.get("procedimiento") or "",
+                "Obra Social": row.get("obra_social") or row.get("obra social") or row.get("os") or "",
                 "Importe": row.get("importe") or row.get("saldo") or row.get("valor") or row.get("valor_pesos") or 0,
                 "Estado": row.get("estado", ""),
             })
