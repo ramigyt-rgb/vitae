@@ -2304,27 +2304,13 @@ def render_agenda_quirofano(module_name: str, cfg: dict) -> None:
                             
                                 )
                             
-                                if submitted:
-                            
-                                    errors = validate_required(cfg, data)
-                            
-                                if errors:
+                                    if submitted:
+
+                                            insert_row(table, data)
                                 
-                                    st.error(
-                            
-                                    "Faltan completar campos obligatorios: "
-                        
-                                    + ", ".join(errors)
-                    
-                                )
-                
-                                else:
-            
-                                    insert_row(table, data)
-            
-                                    st.success("Cirugía guardada correctamente.")
-            
-                                    st.rerun()
+                                            st.success("Cirugía guardada correctamente.")
+                                
+                                            st.rerun()
 
     with tab_registros:
 
