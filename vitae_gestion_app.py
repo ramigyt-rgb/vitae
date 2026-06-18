@@ -2136,6 +2136,31 @@ def render_dashboard() -> None:
         st.success("No hay vencimientos cargados para los próximos 30 días.")
     else:
         st.dataframe(venc_df.sort_values("Vencimiento"), use_container_width=True, hide_index=True)
+        st.divider()
+
+        a_cobrar_vmr = 0
+    
+        a_cobrar_vm = 0
+    
+        for _, row in venc_df.iterrows():
+    
+            importe = money(row["Importe"])
+    
+            if "VMR" in str(row["Módulo"]):
+    
+                a_cobrar_vmr += importe
+    
+            elif "VM" in str(row["Módulo"]):
+    
+                a_cobrar_vm += importe
+    
+        c1, c2, c3 = st.columns(3)
+    
+        c1.metric("💰 A cobrar VMR", fmt_money(a_cobrar_vmr))
+    
+        c2.metric("💰 A cobrar VM", fmt_money(a_cobrar_vm))
+    
+        c3.metric("💰 Total a cobrar", fmt_money(a_cobrar_vmr + a_cobrar_vm))
 def render_agenda_quirofano(module_name: str, cfg: dict) -> None:
 
     table = cfg["table"]
