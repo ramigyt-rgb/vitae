@@ -1962,6 +1962,49 @@ def render_dashboard() -> None:
     c8.metric("Vencidos / críticos", vencidos)
     c9.metric("Tareas pendientes", tareas_pend)
     c10.metric("Promedio por paciente", fmt_money(promedio_facturacion))
+    
+
+    # ======================
+    
+    # RESUMEN VMR
+    
+    # ======================
+    
+    st.divider()
+    
+    st.markdown("### Resumen VMR")
+    
+    v1, v2, v3 = st.columns(3)
+    
+    v1.metric("Caja VMR", fmt_money(caja_vmr))
+    
+    v2.metric("Banco VMR", fmt_money(banco_vmr))
+    
+    v3.metric("Facturación VMR", fmt_money(facturacion_vmr))
+    
+    # ======================
+    
+    # RESUMEN VM
+    
+    # ======================
+    
+    st.divider()
+    
+    st.markdown("### Resumen VM")
+    
+    m1, m2, m3 = st.columns(3)
+    
+    m1.metric("Caja VM", fmt_money(caja_vm))
+    
+    m2.metric("Banco VM", fmt_money(banco_vm))
+    
+    m3.metric("Facturación VM", fmt_money(facturacion_vm))
+    
+    st.divider()
+    
+    st.markdown("### Indicadores Operativos")
+    
+    st.markdown("### Estado financiero global")
     st.divider()
     st.markdown("### Indicadores Operativos")
     st.markdown("### Estado financiero global")
