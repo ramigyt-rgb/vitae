@@ -2403,156 +2403,156 @@ def render_module(module_name: str) -> None:
                                     
                         st.rerun()
 
-    with tab2:
-        render_importer(module_name, cfg)
+            with tab2:
+                render_importer(module_name, cfg)
 
-    with tab3:
-        df = add_balance_columns(get_df(table))
-        if df.empty:
-            st.warning("Todavía no hay registros cargados en este módulo.")
-        else:
-            filtered = apply_filters(df, module_name)
-            st.subheader("Indicadores del módulo")
-            m1, m2, m3, m4 = st.columns(4)
-            m1.metric("Registros visibles", len(filtered))
-            if "ingreso" in filtered.columns:
-                m2.metric("Ingresos", fmt_money(filtered["ingreso"].apply(money).sum()))
-            if "egreso" in filtered.columns:
-                m3.metric("Egresos", fmt_money(filtered["egreso"].apply(money).sum()))
-            if "saldo_movimiento" in filtered.columns:
-                m4.metric("Saldo", fmt_money(filtered["saldo_movimiento"].apply(money).sum()))
-            elif "saldo" in filtered.columns:
-                m4.metric("Saldo", fmt_money(filtered["saldo"].apply(money).sum()))
-            elif "importe" in filtered.columns:
-                m4.metric("Total importe", fmt_money(filtered["importe"].apply(money).sum()))
-            elif "valor_pesos" in filtered.columns:
-                m4.metric("Total facturado", fmt_money(filtered["valor_pesos"].apply(money).sum()))
-
-            show = filtered.copy()
-
-            cols = [
-
-                "afiliado",
-
-                "obra_social",
-
-                "procedimiento",
-
-                "medico_responsable",
-
-                "fecha_factura",
-
-                "valor_pesos",
-
-                "estado"
-
-            ]
-
-            show = show[[c for c in cols if c in show.columns]]
-
-            show = show.rename(columns={
-
-                "afiliado": "Paciente",
-
-                "obra_social": "Obra Social",
-
-                "procedimiento": "Procedimiento",
-
-                "medico_responsable": "Médico",
-
-                "fecha_factura": "Fecha Factura",
-
-                "valor_pesos": "Valor Facturado",
-
-                "estado": "Estado"
-
-            })
-
-            if "Valor Facturado" in show.columns:
-
-                show["Valor Facturado"] = show["Valor Facturado"].apply(fmt_money)
-
-            st.dataframe(
-
-                show,
-
-                use_container_width=True,
-
-                hide_index=True
-
-            )
-
-            fecha_col = first_available_date_col(filtered, module_name)
-            if fecha_col and not filtered.empty:
-                graph = filtered.copy()
-                graph[fecha_col] = pd.to_datetime(graph[fecha_col], errors="coerce")
-                graph = graph[graph[fecha_col].notna()]
-                y_col = None
-                if "saldo_movimiento" in graph.columns:
-                    y_col = "saldo_movimiento"
-                elif "saldo" in graph.columns:
-                    y_col = "saldo"
-                elif "importe" in graph.columns:
-                    y_col = "importe"
-                elif "valor_pesos" in graph.columns:
-                    y_col = "valor_pesos"
-                if y_col and not graph.empty:
-                    chart = graph.groupby(graph[fecha_col].dt.date)[y_col].sum().reset_index()
-                    fig = px.line(chart, x=fecha_col, y=y_col, markers=True, title=f"Evolución: {module_name}")
-                    st.plotly_chart(fig, use_container_width=True)
-
-    with tab4:
-        df = get_df(table)
-        if df.empty:
-            st.warning("No hay registros para editar.")
-        else:
-            ids = df["id"].tolist()
-            selected_id = st.selectbox("Seleccionar ID", ids, key=f"edit_select_{table}")
-            row = df[df["id"] == selected_id].iloc[0].to_dict()
-            st.caption(f"Creado: {row.get('created_at', '')} | Última actualización: {row.get('updated_at', '')}")
-
-            with st.form(f"form_edit_{table}"):
-                data: Dict[str, Any] = {}
-                cols = st.columns(2)
-                for i, field in enumerate(cfg["fields"]):
-                    with cols[i % 2]:
-                        raw = input_field(field, f"edit_{table}_{selected_id}", row)
-                        data[field[0]] = clean_for_db(raw, field[1])
-                save = st.form_submit_button("Guardar cambios", type="primary")
-                if save:
-                    errors = validate_required(cfg, data)
-                    if errors:
-                        st.error("Faltan completar campos obligatorios: " + ", ".join(errors))
-                    else:
-                        update_row(table, int(selected_id), data)
-                        st.success("Registro actualizado correctamente.")
+            with tab3:
+                df = add_balance_columns(get_df(table))
+                if df.empty:
+                    st.warning("Todavía no hay registros cargados en este módulo.")
+                else:
+                    filtered = apply_filters(df, module_name)
+                    st.subheader("Indicadores del módulo")
+                    m1, m2, m3, m4 = st.columns(4)
+                    m1.metric("Registros visibles", len(filtered))
+                    if "ingreso" in filtered.columns:
+                        m2.metric("Ingresos", fmt_money(filtered["ingreso"].apply(money).sum()))
+                    if "egreso" in filtered.columns:
+                        m3.metric("Egresos", fmt_money(filtered["egreso"].apply(money).sum()))
+                    if "saldo_movimiento" in filtered.columns:
+                        m4.metric("Saldo", fmt_money(filtered["saldo_movimiento"].apply(money).sum()))
+                    elif "saldo" in filtered.columns:
+                        m4.metric("Saldo", fmt_money(filtered["saldo"].apply(money).sum()))
+                    elif "importe" in filtered.columns:
+                        m4.metric("Total importe", fmt_money(filtered["importe"].apply(money).sum()))
+                    elif "valor_pesos" in filtered.columns:
+                        m4.metric("Total facturado", fmt_money(filtered["valor_pesos"].apply(money).sum()))
+        
+                    show = filtered.copy()
+        
+                    cols = [
+        
+                        "afiliado",
+        
+                        "obra_social",
+        
+                        "procedimiento",
+        
+                        "medico_responsable",
+        
+                        "fecha_factura",
+        
+                        "valor_pesos",
+        
+                        "estado"
+        
+                    ]
+        
+                    show = show[[c for c in cols if c in show.columns]]
+        
+                    show = show.rename(columns={
+        
+                        "afiliado": "Paciente",
+        
+                        "obra_social": "Obra Social",
+        
+                        "procedimiento": "Procedimiento",
+        
+                        "medico_responsable": "Médico",
+        
+                        "fecha_factura": "Fecha Factura",
+        
+                        "valor_pesos": "Valor Facturado",
+        
+                        "estado": "Estado"
+        
+                    })
+        
+                    if "Valor Facturado" in show.columns:
+        
+                        show["Valor Facturado"] = show["Valor Facturado"].apply(fmt_money)
+        
+                    st.dataframe(
+        
+                        show,
+        
+                        use_container_width=True,
+        
+                        hide_index=True
+        
+                    )
+        
+                    fecha_col = first_available_date_col(filtered, module_name)
+                    if fecha_col and not filtered.empty:
+                        graph = filtered.copy()
+                        graph[fecha_col] = pd.to_datetime(graph[fecha_col], errors="coerce")
+                        graph = graph[graph[fecha_col].notna()]
+                        y_col = None
+                        if "saldo_movimiento" in graph.columns:
+                            y_col = "saldo_movimiento"
+                        elif "saldo" in graph.columns:
+                            y_col = "saldo"
+                        elif "importe" in graph.columns:
+                            y_col = "importe"
+                        elif "valor_pesos" in graph.columns:
+                            y_col = "valor_pesos"
+                        if y_col and not graph.empty:
+                            chart = graph.groupby(graph[fecha_col].dt.date)[y_col].sum().reset_index()
+                            fig = px.line(chart, x=fecha_col, y=y_col, markers=True, title=f"Evolución: {module_name}")
+                            st.plotly_chart(fig, use_container_width=True)
+        
+            with tab4:
+                df = get_df(table)
+                if df.empty:
+                    st.warning("No hay registros para editar.")
+                else:
+                    ids = df["id"].tolist()
+                    selected_id = st.selectbox("Seleccionar ID", ids, key=f"edit_select_{table}")
+                    row = df[df["id"] == selected_id].iloc[0].to_dict()
+                    st.caption(f"Creado: {row.get('created_at', '')} | Última actualización: {row.get('updated_at', '')}")
+        
+                    with st.form(f"form_edit_{table}"):
+                        data: Dict[str, Any] = {}
+                        cols = st.columns(2)
+                        for i, field in enumerate(cfg["fields"]):
+                            with cols[i % 2]:
+                                raw = input_field(field, f"edit_{table}_{selected_id}", row)
+                                data[field[0]] = clean_for_db(raw, field[1])
+                        save = st.form_submit_button("Guardar cambios", type="primary")
+                        if save:
+                            errors = validate_required(cfg, data)
+                            if errors:
+                                st.error("Faltan completar campos obligatorios: " + ", ".join(errors))
+                            else:
+                                update_row(table, int(selected_id), data)
+                                st.success("Registro actualizado correctamente.")
+                                st.rerun()
+        
+                    st.warning("Zona de eliminación")
+                    confirm = st.checkbox("Confirmo que quiero eliminar este registro", key=f"confirm_delete_{table}_{selected_id}")
+                    if st.button("Eliminar registro", disabled=not confirm, type="secondary"):
+                        delete_row(table, int(selected_id))
+                        st.success("Registro eliminado.")
                         st.rerun()
-
-            st.warning("Zona de eliminación")
-            confirm = st.checkbox("Confirmo que quiero eliminar este registro", key=f"confirm_delete_{table}_{selected_id}")
-            if st.button("Eliminar registro", disabled=not confirm, type="secondary"):
-                delete_row(table, int(selected_id))
-                st.success("Registro eliminado.")
-                st.rerun()
-
-    with tab5:
-        df = add_balance_columns(get_df(table))
-        if df.empty:
-            st.info("No hay datos para exportar.")
-        else:
-            incluir_tecnicas = st.checkbox("Incluir columnas técnicas id / created_at / updated_at", value=False, key=f"export_tech_{table}")
-            export_df = df if incluir_tecnicas else module_business_df(df, cfg)
-            csv = export_df.to_csv(index=False).encode("utf-8-sig")
-            st.download_button("Descargar CSV", data=csv, file_name=f"{table}.csv", mime="text/csv")
-            xlsx_path = Path(f"{table}.xlsx")
-            export_df.to_excel(xlsx_path, index=False)
-            with open(xlsx_path, "rb") as f:
-                st.download_button(
-                    "Descargar Excel",
-                    data=f,
-                    file_name=f"{table}.xlsx",
-                    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                )
+        
+            with tab5:
+                df = add_balance_columns(get_df(table))
+                if df.empty:
+                    st.info("No hay datos para exportar.")
+                else:
+                    incluir_tecnicas = st.checkbox("Incluir columnas técnicas id / created_at / updated_at", value=False, key=f"export_tech_{table}")
+                    export_df = df if incluir_tecnicas else module_business_df(df, cfg)
+                    csv = export_df.to_csv(index=False).encode("utf-8-sig")
+                    st.download_button("Descargar CSV", data=csv, file_name=f"{table}.csv", mime="text/csv")
+                    xlsx_path = Path(f"{table}.xlsx")
+                    export_df.to_excel(xlsx_path, index=False)
+                    with open(xlsx_path, "rb") as f:
+                        st.download_button(
+                            "Descargar Excel",
+                            data=f,
+                            file_name=f"{table}.xlsx",
+                            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                        )
 
 def render_admin() -> None:
     render_header()
