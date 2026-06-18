@@ -2120,8 +2120,7 @@ def render_dashboard() -> None:
         temp = df.copy()
         temp["vencimiento_dt"] = pd.to_datetime(temp["vencimiento"], errors="coerce")
         temp = temp[temp["vencimiento_dt"].notna()]
-        limite = hoy + pd.Timedelta(days=30)
-        temp = temp[(temp["vencimiento_dt"] >= hoy) & (temp["vencimiento_dt"] <= limite)]
+        temp = temp[temp["vencimiento_dt"] >= hoy]
         for _, row in temp.iterrows():
             venc_rows.append({
                 "Módulo": name,
