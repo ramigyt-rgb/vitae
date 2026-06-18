@@ -2084,23 +2084,7 @@ def render_dashboard() -> None:
 
     e.metric("Caja Gine Vitae", fmt_money(gine_vitae))
 
-    a, b, c, d, e = st.columns(5)
-
-    a.metric("Liquidez total", fmt_money(liquidez_total))
-
-    b.metric("Pagos pendientes", fmt_money(pagos_pendientes))
-
-    c.metric("Planes de pago", fmt_money(planes_pago))
-
-    d.metric("Honorarios médicos", fmt_money(honorarios))
-
-    e.metric("Deuda total", fmt_money(deuda_total_global))
-
-    a, b = st.columns(2)
-
-    a.metric("Deuda impositiva VMR", fmt_money(deuda_imp_vmr))
-
-    b.metric("Deuda impositiva VM", fmt_money(deuda_imp_vm))
+    
 
     st.divider()
     o1, o2, o3 = st.columns(3)
