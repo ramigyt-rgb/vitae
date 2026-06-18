@@ -2298,21 +2298,49 @@ def render_agenda_quirofano(module_name: str, cfg: dict) -> None:
                                             
                                             if tipo == "date":
                                             
-                                                raw = st.date_input(label, key=f"qx_{table}_{nombre}_{i}")
+                                                raw = st.date_input(
+
+                                                label,
+                                            
+                                                key=f"qx_agenda_form_{table}_{nombre}_{i}_{field[1]}"
+                                            
+                                            )
                                             
                                             elif tipo == "number":
                                             
-                                                raw = st.number_input(label, value=0.0, key=f"qx_{table}_{nombre}_{i}")
+                                                raw = st.number_input(
+
+                                                label,
+                                            
+                                                value=0.0,
+                                            
+                                                key=f"qx_agenda_form_{table}_{nombre}_{i}_{field[1]}"
+                                            
+                                            )
                                             
                                             elif tipo == "select":
                                             
                                                 opciones = field[3] if len(field) > 3 else []
                                             
-                                                raw = st.selectbox(label, opciones, key=f"qx_{table}_{nombre}_{i}")
+                                                raw = st.selectbox(
+
+                                                label,
+                                            
+                                                opciones,
+                                            
+                                                key=f"qx_agenda_form_{table}_{nombre}_{i}_{field[1]}"
+                                            
+                                            )
                                             
                                             else:
                                             
-                                                raw = st.text_input(label, key=f"qx_{table}_{nombre}_{i}")
+                                                raw = st.text_input(
+
+                                                label,
+                                            
+                                                key=f"qx_agenda_form_{table}_{nombre}_{i}_{field[1]}"
+                                            
+                                            )
                                             
                                             data[nombre] = clean_for_db(raw, tipo)
 
