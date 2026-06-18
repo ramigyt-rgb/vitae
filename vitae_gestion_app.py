@@ -2377,26 +2377,31 @@ def render_module(module_name: str) -> None:
         st.header(module_name)
         st.caption(cfg["descripcion"])
                 
-                    tab1, tab2, tab3, tab4, tab5 = st.tabs(["➕ Cargar", "📥 Importar planilla", "📋 Registros", "✏️ Editar / Eliminar", "📤 Exportar"])
+        tab1, tab2, tab3, tab4, tab5 = st.tabs(["➕ Cargar", "📥 Importar planilla", "📋 Registros", "✏️ Editar / Eliminar", "📤 Exportar"])
                 
-                    with tab1:
-                        st.subheader("Nuevo registro")
-                        with st.form(f"form_add_{table}", clear_on_submit=True):
-                            data: Dict[str, Any] = {}
-                            cols = st.columns(2)
-                            for i, field in enumerate(cfg["fields"]):
-                                with cols[i % 2]:
-                                    raw = input_field(field, f"add_{table}")
-                                    data[field[0]] = clean_for_db(raw, field[1])
-                            submitted = st.form_submit_button("Guardar registro", type="primary")
-                            if submitted:
-                                errors = validate_required(cfg, data)
-                                if errors:
-                                    st.error("Faltan completar campos obligatorios: " + ", ".join(errors))
-                                else:
-                                    insert_row(table, data)
-                                    st.success("Registro guardado correctamente.")
-                                    st.rerun()
+        with tab1:
+            st.subheader("Nuevo registro")
+            with st.form(f"form_add_{table}", clear_on_submit=True):
+                data: Dict[str, Any] = {}
+                    
+                cols = st.columns(2)
+                    
+                for i, field in enumerate(cfg["fields"]):
+                    with cols[i % 2]:
+                            
+                        raw = input_field(field, f"add_{table}")
+                                    
+                        data[field[0]] = clean_for_db(raw, field[1])
+                submitted = st.form_submit_button("Guardar registro", type="primary")
+                if submitted:
+                    errors = validate_required(cfg, data)
+                    if errors:
+                        st.error("Faltan completar campos obligatorios: " + ", ".join(errors))
+                    else:
+                        insert_row(table, data)
+                        st.success("Registro guardado correctamente.")
+                                    
+                        st.rerun()
 
     with tab2:
         render_importer(module_name, cfg)
