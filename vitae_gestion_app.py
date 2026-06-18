@@ -2302,47 +2302,47 @@ def render_agenda_quirofano(module_name: str, cfg: dict) -> None:
 
         with st.form(f"form_add_{table}", clear_on_submit=True):
 
-        data = {}
-    
-        cols = st.columns(2)
-    
-        for i, field in enumerate(cfg["fields"]):
-    
-            with cols[i % 2]:
-    
-                raw = input_field(field, f"add_{table}")
-    
-                data[field[0]] = clean_for_db(raw, field[1])
-    
-        submitted = st.form_submit_button(
-    
-            "Guardar cirugía",
-    
-            type="primary"
-    
-        )
-    
-        if submitted:
-    
-            errors = validate_required(cfg, data)
-    
-            if errors:
-    
-                st.error(
-    
-                    "Faltan completar campos obligatorios: "
-    
-                    + ", ".join(errors)
-    
-                )
-    
-            else:
-    
-                insert_row(table, data)
-    
-                st.success("Cirugía guardada correctamente.")
-    
-                st.rerun()
+            data = {}
+        
+            cols = st.columns(2)
+        
+            for i, field in enumerate(cfg["fields"]):
+        
+                with cols[i % 2]:
+        
+                    raw = input_field(field, f"add_{table}")
+        
+                    data[field[0]] = clean_for_db(raw, field[1])
+        
+            submitted = st.form_submit_button(
+        
+                "Guardar cirugía",
+        
+                type="primary"
+        
+            )
+        
+            if submitted:
+        
+                errors = validate_required(cfg, data)
+        
+                if errors:
+        
+                    st.error(
+        
+                        "Faltan completar campos obligatorios: "
+        
+                        + ", ".join(errors)
+        
+                    )
+        
+                else:
+        
+                    insert_row(table, data)
+        
+                    st.success("Cirugía guardada correctamente.")
+        
+                    st.rerun()
 
     with tab_registros:
 
