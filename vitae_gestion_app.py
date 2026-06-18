@@ -2871,7 +2871,7 @@ def main() -> None:
     
     elif page == "Configuración":
     
-        render_configuracion(
+        render_configuracion()
 
     st.sidebar.divider()
     st.sidebar.markdown("**Módulos incluidos**")
