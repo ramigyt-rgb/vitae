@@ -2358,7 +2358,7 @@ def render_agenda_quirofano(module_name: str, cfg: dict) -> None:
                                 hide_index=True
                 
                             )
-                def render_module(module_name: str) -> None:
+        def render_module(module_name: str) -> None:
                     cfg = MODULES[module_name]
                     
                 
