@@ -2775,6 +2775,48 @@ def render_admin() -> None:
 
         st.rerun()
 
+def render_configuracion() -> None:
+
+    render_header()
+
+    st.header("Configuración")
+
+    tab1, tab2, tab3, tab4 = st.tabs([
+
+        "👤 Usuarios",
+
+        "🔐 Permisos",
+
+        "🏢 Empresas",
+
+        "⚙️ Sistema"
+
+    ])
+
+    with tab1:
+
+        st.subheader("Usuarios")
+
+        st.info("Acá irá la gestión de usuarios.")
+
+    with tab2:
+
+        st.subheader("Permisos")
+
+        st.info("Acá irá la gestión de permisos.")
+
+    with tab3:
+
+        st.subheader("Empresas")
+
+        st.info("Acá irá la gestión de empresas.")
+
+    with tab4:
+
+        st.subheader("Sistema")
+
+        st.info("Acá irá la configuración general del sistema.")
+
 def seed_examples() -> None:
     examples = [
         ("caja_vmr", {"fecha": date.today().strftime(DATE_FMT), "concepto": "Ingreso muestra fertilidad", "categoria": "Ingreso", "medio": "Efectivo", "ingreso": 150000, "egreso": 0, "responsable": "Administración", "observaciones": "Ejemplo"}),
@@ -2795,20 +2837,41 @@ def main() -> None:
     st.sidebar.title("VITAE")
     st.sidebar.caption("Sistema interno de gestión")
 
-    page = st.sidebar.radio("Navegación", ["Dashboard Global", "Módulos", "Administración"])
+    page = st.sidebar.radio("Navegación", ["Dashboard Global", "Módulos", "Administración", "Configuración"])
 
     if page == "Dashboard Global":
+    
         render_dashboard()
+    
     elif page == "Módulos":
+    
         empresas = ["Todos", "VMR", "VM", "VITAE"]
+    
         empresa_filter = st.sidebar.selectbox("Empresa", empresas)
+    
         module_names = list(MODULES.keys())
+    
         if empresa_filter != "Todos":
-            module_names = [m for m in module_names if MODULES[m]["empresa"] == empresa_filter or MODULES[m]["empresa"] == "VITAE"]
+    
+            module_names = [
+    
+                m for m in module_names
+    
+                if MODULES[m]["empresa"] == empresa_filter or MODULES[m]["empresa"] == "VITAE"
+    
+            ]
+    
         module_name = st.sidebar.selectbox("Módulo", module_names)
+    
         render_module(module_name)
-    else:
+    
+    elif page == "Administración":
+    
         render_admin()
+    
+    elif page == "Configuración":
+    
+        render_configuracion(
 
     st.sidebar.divider()
     st.sidebar.markdown("**Módulos incluidos**")
