@@ -1970,44 +1970,107 @@ def render_dashboard() -> None:
     
     # ======================
     
-    st.divider()
+    def render_resumen_empresa(titulo, empresa):
+
+        mods = {
     
-    st.markdown("### Resumen VMR")
+            name: dfs.get(name, pd.DataFrame())
     
-    v1, v2, v3 = st.columns(3)
+            for name, cfg in MODULES.items()
     
-    v1.metric("Caja VMR", fmt_money(caja_vmr))
+            if cfg.get("empresa") == empresa
     
-    v2.metric("Banco VMR", fmt_money(banco_vmr))
+        }
     
-    v3.metric("Facturación VMR", fmt_money(total_mod("Facturación VMR")))
+        liquidez = 0
     
-    # ======================
+        facturacion = 0
     
-    # RESUMEN VM
+        cobrado = 0
     
-    # ======================
+        a_cobrar = 0
     
-    st.divider()
+        a_pagar_emp = 0
     
-    st.markdown("### Resumen VM")
+        deuda_emp = 0
     
-    m1, m2, m3 = st.columns(3)
+        vencidos_emp = 0
     
-    m1.metric("Caja VM", fmt_money(caja_vm))
+        tareas_emp = 0
     
-    m2.metric("Banco VM", fmt_money(banco_vm))
+        pacientes = 0
     
-    m3.metric("Facturación VM", fmt_money(total_mod("Facturación VM")))
+        for name, df in mods.items():
     
-    st.divider()
+            if df.empty:
     
-    st.markdown("### Indicadores Operativos")
+                continue
     
-    st.markdown("### Estado financiero global")
-    st.divider()
-    st.markdown("### Indicadores Operativos")
-    st.markdown("### Estado financiero global")
+            tipo = MODULES[name].get("tipo", "")
+    
+            if tipo in ["caja", "banco"]:
+    
+                liquidez += total_mod(name)
+    
+            if "valor_pesos" in df.columns:
+    
+                facturacion += df["valor_pesos"].apply(money).sum()
+    
+                pacientes += len(df)
+    
+                if "estado" in df.columns:
+    
+                    cobrado += df[df["estado"].astype(str).str.lower().isin(["completo", "cobrado", "pagado"])]["valor_pesos"].apply(money).sum()
+    
+                    a_cobrar += df[df["estado"].astype(str).str.lower().isin(["pendiente", "parcial", "vencido"])]["valor_pesos"].apply(money).sum()
+    
+            if "monto" in df.columns and "estado" in df.columns:
+    
+                a_pagar_emp += df[df["estado"].astype(str).str.lower().isin(["pendiente", "vencido"])]["monto"].apply(money).sum()
+    
+            if "vencimiento" in df.columns:
+    
+                vencidos_emp += len(df)
+    
+            if name == "Tareas Pendientes" and "estado" in df.columns:
+    
+                tareas_emp += len(df[~df["estado"].astype(str).str.lower().isin(["finalizada", "cancelada"])])
+    
+        resultado = cobrado - a_pagar_emp
+    
+        promedio = facturacion / pacientes if pacientes > 0 else 0
+    
+        st.divider()
+    
+        st.markdown(f"### {titulo}")
+    
+        r1, r2, r3, r4, r5 = st.columns(5)
+    
+        r1.metric("Liquidez actual", fmt_money(liquidez))
+    
+        r2.metric("Facturación mes", fmt_money(facturacion))
+    
+        r3.metric("Cobrado mes", fmt_money(cobrado))
+    
+        r4.metric("A cobrar", fmt_money(a_cobrar))
+    
+        r5.metric("Resultado mes", fmt_money(resultado))
+    
+        r6, r7, r8, r9, r10 = st.columns(5)
+    
+        r6.metric("A pagar", fmt_money(a_pagar_emp))
+    
+        r7.metric("Deuda total", fmt_money(deuda_emp))
+    
+        r8.metric("Vencidos / críticos", vencidos_emp)
+    
+        r9.metric("Tareas pendientes", tareas_emp)
+    
+        r10.metric("Promedio por paciente", fmt_money(promedio))
+    
+    render_resumen_empresa("Resumen VMR", "VMR")
+    
+    render_resumen_empresa("Resumen VM", "VM")
 
     a, b, c, d, e = st.columns(5)
 
