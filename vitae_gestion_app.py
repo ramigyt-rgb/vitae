@@ -2248,95 +2248,77 @@ def render_agenda_quirofano(module_name: str, cfg: dict) -> None:
 
                     color = "#FEF9C3"
 
-                st.markdown(
+                with st.container(border=True):
 
-                    f"""
-
-                    <div style="
-
-                        background:{color};
-
-                        border-radius:14px;
-
-                        padding:14px 18px;
-
-                        margin-bottom:12px;
-
-                        border:1px solid #e5e7eb;
-
-                    ">
-
-                        <b>{fecha_txt} | {hi} - {hf}</b><br>
-
-                        <span style="font-size:18px;"><b>{proc}</b></span><br>
-
-                        Paciente: {paciente}<br>
-
-                        Médico: {medico} | Anestesista: {anest}<br>
-
-                        Sala: {sala} | Estado: <b>{estado}</b>
-
-                    </div>
-
-                    """,
-
-                    unsafe_allow_html=True
-
-                )
-
-            st.markdown("### Tabla agenda")
-
-            st.dataframe(
-
-                agenda.drop(columns=["hora_inicio_dt", "hora_fin_dt"], errors="ignore"),
-
-                use_container_width=True,
-
-                hide_index=True
-
-            )
-
-    with tab_cargar:
-
-        st.subheader("Nueva cirugía")
-
-        with st.form(f"form_add_{table}", clear_on_submit=True):
-
-            data = {}
-        
-            cols = st.columns(2)
-        
-            for i, field in enumerate(cfg["fields"]):
-        
-                with cols[i % 2]:
-        
-                    raw = input_field(field, f"add_{table}")
-        
-                    data[field[0]] = clean_for_db(raw, field[1])
-        
-            submitted = st.form_submit_button(
-        
-                "Guardar cirugía",
-        
-                type="primary"
-        
-            )
-        
-            if submitted:
-        
-                errors = validate_required(cfg, data)
-        
-                if errors:
-        
-                    st.error(
-        
-                        "Faltan completar campos obligatorios: "
-        
-                        + ", ".join(errors)
-        
-                    )
-        
-                else:
+                                st.markdown(f"**{fecha_txt} | {hi} - {hf}**")
+                            
+                                st.markdown(f"### {proc}")
+                            
+                                st.write(f"Paciente: {paciente}")
+                            
+                                st.write(f"Médico: {medico}")
+                            
+                                st.write(f"Anestesista: {anest}")
+                            
+                                st.write(f"Sala: {sala}")
+                            
+                                st.write(f"Estado: {estado}")
+                            
+                st.markdown("### Tabla agenda")
+                        
+                                    
+                st.dataframe(
+                    
+                                    
+                                agenda.drop(columns=["hora_inicio_dt", "hora_fin_dt"], errors="ignore"),
+                    
+                                use_container_width=True,
+                    
+                                hide_index=True
+                    
+                            )
+                    
+                with tab_cargar:
+                    
+                                st.subheader("Nueva cirugía")
+                    
+                                with st.form(f"form_add_{table}", clear_on_submit=True):
+                    
+                                data = {}
+                            
+                                cols = st.columns(2)
+                            
+                                for i, field in enumerate(cfg["fields"]):
+                            
+                                    with cols[i % 2]:
+                            
+                                        raw = input_field(field, f"add_{table}")
+                            
+                                        data[field[0]] = clean_for_db(raw, field[1])
+                        
+                                submitted = st.form_submit_button(
+                        
+                                "Guardar cirugía",
+                        
+                                type="primary"
+                        
+                            )
+                        
+                            if submitted:
+                        
+                                errors = validate_required(cfg, data)
+                        
+                                if errors:
+                        
+                                st.error(
+                    
+                                "Faltan completar campos obligatorios: "
+                
+                                + ", ".join(errors)
+            
+                        )
+            
+                    else:
         
                     insert_row(table, data)
         
