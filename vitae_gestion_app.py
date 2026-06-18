@@ -2278,147 +2278,123 @@ def render_agenda_quirofano(module_name: str, cfg: dict) -> None:
                     
                             )
                     
-                with tab_cargar:
+                        with st.form(f"form_qx_{datetime.now().timestamp()}", clear_on_submit=True):
+
+                            fecha = st.date_input("Fecha", key=f"qx_fecha_{datetime.now().timestamp()}")
+                
+                            hora_inicio = st.text_input("Hora inicio", key=f"qx_hi_{datetime.now().timestamp()}")
+                
+                            hora_fin = st.text_input("Hora fin", key=f"qx_hf_{datetime.now().timestamp()}")
+                
+                            duracion_min = st.number_input("Duración min", value=0.0, key=f"qx_dur_{datetime.now().timestamp()}")
+                
+                            sala = st.selectbox("Sala", ["Quirófano 1"], key=f"qx_sala_{datetime.now().timestamp()}")
+                
+                            paciente = st.text_input("Paciente", key=f"qx_paciente_{datetime.now().timestamp()}")
+                
+                            procedimiento = st.text_input("Procedimiento", key=f"qx_proc_{datetime.now().timestamp()}")
+                
+                            medico = st.text_input("Médico", key=f"qx_medico_{datetime.now().timestamp()}")
+                
+                            anestesista = st.text_input("Anestesista", key=f"qx_anest_{datetime.now().timestamp()}")
+                
+                            estado = st.selectbox("Estado", ["Programada", "En curso", "Finalizada", "Suspendida", "Cancelada"], key=f"qx_estado_{datetime.now().timestamp()}")
+                
+                            observaciones = st.text_area("Observaciones", key=f"qx_obs_{datetime.now().timestamp()}")
+                
+                            submitted = st.form_submit_button("Guardar cirugía", type="primary")
+                
+                            if submitted:
+                
+                                data = {
+                
+                                    "fecha": fecha,
+                
+                                    "hora_inicio": hora_inicio,
+                
+                                    "hora_fin": hora_fin,
+                
+                                    "duracion_min": duracion_min,
+                
+                                    "sala": sala,
+                
+                                    "paciente": paciente,
+                
+                                    "procedimiento": procedimiento,
+                
+                                    "medico": medico,
+                
+                                    "anestesista": anestesista,
+                
+                                    "estado": estado,
+                
+                                    "observaciones": observaciones,
+                
+                                }
+                
+                                insert_row(table, data)
+                
+                                st.success("Cirugía guardada correctamente.")
+                
+                                st.rerun()
+                
+                    with tab_registros:
+                
+                        st.subheader("Registros cargados")
+                
+                        if df.empty:
+                
+                            st.warning("No hay registros cargados.")
+                
+                        else:
+                
+                            st.dataframe(
+                
+                                df.drop(columns=["hora_inicio_dt", "hora_fin_dt"], errors="ignore"),
+                
+                                use_container_width=True,
+                
+                                hide_index=True
+                
+                            )
+                def render_module(module_name: str) -> None:
+                    cfg = MODULES[module_name]
                     
-                                st.subheader("Nueva cirugía")
+                
+                    if cfg.get("tipo") == "quirófano":
                     
-                                with st.form(f"form_agenda_{datetime.now().timestamp()}"):
+                        render_agenda_quirofano(module_name, cfg)
                     
-                                    data = {}
-                                
-                                    cols = st.columns(2)
-                                
-                                    for i, field in enumerate(cfg["fields"]):
-                                
-                                        with cols[i % 2]:
-                                
-                                            nombre, tipo = field[0], field[1]
-
-                                            label = nombre.replace("_", " ").title()
-                                            
-                                            if tipo == "date":
-                                            
-                                                raw = st.date_input(
-
-                                                label,
-                                            
-                                                key=f"qx_agenda_form_{table}_{nombre}_{i}_{field[1]}"
-                                            
-                                            )
-                                            
-                                            elif tipo == "number":
-                                            
-                                                raw = st.number_input(
-
-                                                label,
-                                            
-                                                value=0.0,
-                                            
-                                                key=f"qx_agenda_form_{table}_{nombre}_{i}_{field[1]}"
-                                            
-                                            )
-                                            
-                                            elif tipo == "select":
-                                            
-                                                opciones = field[3] if len(field) > 3 else []
-                                            
-                                                raw = st.selectbox(
-
-                                                label,
-                                            
-                                                opciones,
-                                            
-                                                key=f"qx_agenda_form_{table}_{nombre}_{i}_{field[1]}"
-                                            
-                                            )
-                                            
-                                            else:
-                                            
-                                                raw = st.text_input(
-
-                                                label,
-                                            
-                                                key=f"qx_agenda_form_{table}_{nombre}_{i}_{field[1]}"
-                                            
-                                            )
-                                            
-                                            data[nombre] = clean_for_db(raw, tipo)
-
-                                                
+                        return
+                    if module_name in ["Facturación VMR", "Facturación VM"]:
+                        render_facturacion_pro(module_name, cfg)
                             
-                                    submitted = st.form_submit_button(
-                            
-                                    "Guardar cirugía",
-                            
-                                    type="primary"
-                            
-                                )
-                            
-                                    if submitted:
-
-                                            insert_row(table, data)
-                                
-                                            st.success("Cirugía guardada correctamente.")
-                                
-                                            st.rerun()
-
-    with tab_registros:
-
-        st.subheader("Registros cargados")
-
-        if df.empty:
-
-            st.warning("No hay registros cargados.")
-
-        else:
-
-            st.dataframe(
-
-                df.drop(columns=["hora_inicio_dt", "hora_fin_dt"], errors="ignore"),
-
-                use_container_width=True,
-
-                hide_index=True
-
-            )
-def render_module(module_name: str) -> None:
-    cfg = MODULES[module_name]
-    
-
-    if cfg.get("tipo") == "quirófano":
-    
-        render_agenda_quirofano(module_name, cfg)
-    
-        return
-    if module_name in ["Facturación VMR", "Facturación VM"]:
-        render_facturacion_pro(module_name, cfg)
-            
-        return
-    table = cfg["table"]
-    render_header()
-    st.header(module_name)
-    st.caption(cfg["descripcion"])
-
-    tab1, tab2, tab3, tab4, tab5 = st.tabs(["➕ Cargar", "📥 Importar planilla", "📋 Registros", "✏️ Editar / Eliminar", "📤 Exportar"])
-
-    with tab1:
-        st.subheader("Nuevo registro")
-        with st.form(f"form_add_{table}", clear_on_submit=True):
-            data: Dict[str, Any] = {}
-            cols = st.columns(2)
-            for i, field in enumerate(cfg["fields"]):
-                with cols[i % 2]:
-                    raw = input_field(field, f"add_{table}")
-                    data[field[0]] = clean_for_db(raw, field[1])
-            submitted = st.form_submit_button("Guardar registro", type="primary")
-            if submitted:
-                errors = validate_required(cfg, data)
-                if errors:
-                    st.error("Faltan completar campos obligatorios: " + ", ".join(errors))
-                else:
-                    insert_row(table, data)
-                    st.success("Registro guardado correctamente.")
-                    st.rerun()
+                        return
+                    table = cfg["table"]
+                    render_header()
+                    st.header(module_name)
+                    st.caption(cfg["descripcion"])
+                
+                    tab1, tab2, tab3, tab4, tab5 = st.tabs(["➕ Cargar", "📥 Importar planilla", "📋 Registros", "✏️ Editar / Eliminar", "📤 Exportar"])
+                
+                    with tab1:
+                        st.subheader("Nuevo registro")
+                        with st.form(f"form_add_{table}", clear_on_submit=True):
+                            data: Dict[str, Any] = {}
+                            cols = st.columns(2)
+                            for i, field in enumerate(cfg["fields"]):
+                                with cols[i % 2]:
+                                    raw = input_field(field, f"add_{table}")
+                                    data[field[0]] = clean_for_db(raw, field[1])
+                            submitted = st.form_submit_button("Guardar registro", type="primary")
+                            if submitted:
+                                errors = validate_required(cfg, data)
+                                if errors:
+                                    st.error("Faltan completar campos obligatorios: " + ", ".join(errors))
+                                else:
+                                    insert_row(table, data)
+                                    st.success("Registro guardado correctamente.")
+                                    st.rerun()
 
     with tab2:
         render_importer(module_name, cfg)
