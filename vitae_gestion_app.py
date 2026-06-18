@@ -2282,7 +2282,7 @@ def render_agenda_quirofano(module_name: str, cfg: dict) -> None:
                     
                                 st.subheader("Nueva cirugía")
                     
-                                with st.form("form_agenda_quirofano_unico", clear_on_submit=True):
+                                with st.form(f"form_agenda_{datetime.now().timestamp()}"):
                     
                                     data = {}
                                 
