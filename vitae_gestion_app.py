@@ -2339,7 +2339,7 @@ def render_agenda_quirofano(module_name: str, cfg: dict) -> None:
                 
                                 st.rerun()
                 
-                    with tab_registros:
+                with tab_registros:
                 
                         st.subheader("Registros cargados")
                 
