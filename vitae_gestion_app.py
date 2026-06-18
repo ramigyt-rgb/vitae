@@ -2071,19 +2071,6 @@ def render_dashboard() -> None:
     render_resumen_empresa("Resumen VMR", "VMR")
     
     render_resumen_empresa("Resumen VM", "VM")
-
-    a, b, c, d, e = st.columns(5)
-
-    a.metric("Caja VMR", fmt_money(caja_vmr))
-
-    b.metric("Banco VMR", fmt_money(banco_vmr))
-
-    c.metric("Caja VM", fmt_money(caja_vm))
-
-    d.metric("Banco VM", fmt_money(banco_vm))
-
-    e.metric("Caja Gine Vitae", fmt_money(gine_vitae))
-
     
 
     st.divider()
