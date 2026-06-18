@@ -1980,7 +1980,7 @@ def render_dashboard() -> None:
     
     v2.metric("Banco VMR", fmt_money(banco_vmr))
     
-    v3.metric("Facturación VMR", fmt_money(facturacion_vmr))
+    v3.metric("Facturación VMR", fmt_money(total_mod("Facturación VMR")))
     
     # ======================
     
@@ -1998,7 +1998,7 @@ def render_dashboard() -> None:
     
     m2.metric("Banco VM", fmt_money(banco_vm))
     
-    m3.metric("Facturación VM", fmt_money(facturacion_vm))
+    m3.metric("Facturación VM", fmt_money(total_mod("Facturación VM")))
     
     st.divider()
     
