@@ -122,28 +122,32 @@ MODULES: Dict[str, Dict[str, Any]] = {
         "descripcion": "Agenda diaria, semanal y mensual de cirugías.",
     
         "fields": [
-    
-            ("fecha", "date", True),
-    
-            ("hora_inicio", "text", True),
-    
-            ("hora_fin", "text", True),
-    
-            ("paciente", "text", True),
-    
-            ("procedimiento", "text", True),
-    
-            ("medico", "text", True),
-    
-            ("anestesista", "text", False),
-    
-            ("estado", "select", True, ["Programada", "Realizada", "Cancelada", "Suspendida"]),
-    
-            ("observaciones", "textarea", False),
-    
-        ],
-    
-    },
+
+    ("fecha", "date", True),
+
+    ("hora_inicio", "text", True),
+
+    ("hora_fin", "text", True),
+
+    ("duracion_min", "number", True),
+
+    ("sala", "select", True, ["Quirófano 1"]),
+
+    ("paciente", "text", True),
+
+    ("procedimiento", "text", True),
+
+    ("medico", "text", True),
+
+    ("anestesista", "text", False),
+
+    ("estado", "select", True,
+
+     ["Programada", "En curso", "Finalizada", "Suspendida", "Cancelada"]),
+
+    ("observaciones", "textarea", False),
+
+],
     
     "Facturación VMR": {
         "table": "facturacion_vmr",
