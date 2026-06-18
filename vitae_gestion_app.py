@@ -2292,9 +2292,31 @@ def render_agenda_quirofano(module_name: str, cfg: dict) -> None:
                                 
                                         with cols[i % 2]:
                                 
-                                            raw = input_field(field, f"add_{table}_{i}")
-                                
-                                            data[field[0]] = clean_for_db(raw, field[1])
+                                            nombre, tipo = field[0], field[1]
+
+                                            label = nombre.replace("_", " ").title()
+                                            
+                                            if tipo == "date":
+                                            
+                                                raw = st.date_input(label, key=f"qx_{table}_{nombre}_{i}")
+                                            
+                                            elif tipo == "number":
+                                            
+                                                raw = st.number_input(label, value=0.0, key=f"qx_{table}_{nombre}_{i}")
+                                            
+                                            elif tipo == "select":
+                                            
+                                                opciones = field[3] if len(field) > 3 else []
+                                            
+                                                raw = st.selectbox(label, opciones, key=f"qx_{table}_{nombre}_{i}")
+                                            
+                                            else:
+                                            
+                                                raw = st.text_input(label, key=f"qx_{table}_{nombre}_{i}")
+                                            
+                                            data[nombre] = clean_for_db(raw, tipo)
+
+                                                
                             
                                     submitted = st.form_submit_button(
                             
