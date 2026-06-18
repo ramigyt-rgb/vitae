@@ -2333,11 +2333,11 @@ def render_agenda_quirofano(module_name: str, cfg: dict) -> None:
                 
                             }
                 
-                                insert_row(table, data)
+                            insert_row(table, data)
                 
-                                st.success("Cirugía guardada correctamente.")
+                            st.success("Cirugía guardada correctamente.")
                 
-                                st.rerun()
+                            st.rerun()
                 
                 with tab_registros:
                 
