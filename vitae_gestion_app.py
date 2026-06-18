@@ -2058,11 +2058,281 @@ def render_dashboard() -> None:
         st.success("No hay vencimientos cargados para los próximos 30 días.")
     else:
         st.dataframe(venc_df.sort_values("Vencimiento"), use_container_width=True, hide_index=True)
+def render_agenda_quirofano(module_name: str, cfg: dict) -> None:
 
+    table = cfg["table"]
+
+    render_header()
+
+    st.header(module_name)
+
+    st.caption(cfg.get("descripcion", ""))
+
+    tab_agenda, tab_cargar, tab_registros = st.tabs([
+
+        "📅 Agenda",
+
+        "➕ Cargar cirugía",
+
+        "📋 Registros"
+
+    ])
+
+    df = get_df(table)
+
+    if not df.empty:
+
+        df["fecha"] = pd.to_datetime(df["fecha"], errors="coerce")
+
+        df["hora_inicio_dt"] = pd.to_datetime(
+
+            df["fecha"].dt.strftime("%Y-%m-%d") + " " + df["hora_inicio"].astype(str),
+
+            errors="coerce"
+
+        )
+
+        df["hora_fin_dt"] = pd.to_datetime(
+
+            df["fecha"].dt.strftime("%Y-%m-%d") + " " + df["hora_fin"].astype(str),
+
+            errors="coerce"
+
+        )
+
+    with tab_agenda:
+
+        st.subheader("Agenda quirúrgica")
+
+        c1, c2, c3 = st.columns(3)
+
+        vista = c1.selectbox(
+
+            "Vista",
+
+            ["Día", "Semana", "Mes"],
+
+            key="vista_agenda_qx"
+
+        )
+
+        fecha_sel = c2.date_input(
+
+            "Fecha",
+
+            value=date.today(),
+
+            key="fecha_agenda_qx"
+
+        )
+
+        sala_sel = c3.selectbox(
+
+            "Sala",
+
+            ["Todas", "Quirófano 1"],
+
+            key="sala_agenda_qx"
+
+        )
+
+        agenda = df.copy()
+
+        if not agenda.empty:
+
+            if vista == "Día":
+
+                agenda = agenda[agenda["fecha"].dt.date == fecha_sel]
+
+            elif vista == "Semana":
+
+                inicio_semana = fecha_sel - timedelta(days=fecha_sel.weekday())
+
+                fin_semana = inicio_semana + timedelta(days=6)
+
+                agenda = agenda[
+
+                    (agenda["fecha"].dt.date >= inicio_semana) &
+
+                    (agenda["fecha"].dt.date <= fin_semana)
+
+                ]
+
+            elif vista == "Mes":
+
+                agenda = agenda[
+
+                    (agenda["fecha"].dt.month == fecha_sel.month) &
+
+                    (agenda["fecha"].dt.year == fecha_sel.year)
+
+                ]
+
+            if sala_sel != "Todas" and "sala" in agenda.columns:
+
+                agenda = agenda[agenda["sala"] == sala_sel]
+
+        total = len(agenda)
+
+        programadas = len(agenda[agenda["estado"].astype(str).str.lower() == "programada"]) if not agenda.empty and "estado" in agenda.columns else 0
+
+        finalizadas = len(agenda[agenda["estado"].astype(str).str.lower() == "finalizada"]) if not agenda.empty and "estado" in agenda.columns else 0
+
+        canceladas = len(agenda[agenda["estado"].astype(str).str.lower().isin(["cancelada", "suspendida"])]) if not agenda.empty and "estado" in agenda.columns else 0
+
+        ocupacion_min = 0
+
+        if not agenda.empty and "duracion_min" in agenda.columns:
+
+            ocupacion_min = agenda["duracion_min"].apply(money).sum()
+
+        ocupacion_pct = min((ocupacion_min / (13 * 60)) * 100, 100)
+
+        k1, k2, k3, k4, k5 = st.columns(5)
+
+        k1.metric("Cirugías", total)
+
+        k2.metric("Programadas", programadas)
+
+        k3.metric("Finalizadas", finalizadas)
+
+        k4.metric("Canceladas/Suspendidas", canceladas)
+
+        k5.metric("Ocupación estimada", f"{ocupacion_pct:.1f}%")
+
+        st.divider()
+
+        if agenda.empty:
+
+            st.info("No hay cirugías cargadas para esta vista.")
+
+        else:
+
+            agenda = agenda.sort_values(by=["fecha", "hora_inicio_dt"], ascending=True)
+
+            st.markdown("### Cronograma")
+
+            for _, row in agenda.iterrows():
+
+                estado = str(row.get("estado", "Programada"))
+
+                paciente = row.get("paciente", "")
+
+                proc = row.get("procedimiento", "")
+
+                medico = row.get("medico", "")
+
+                anest = row.get("anestesista", "")
+
+                sala = row.get("sala", "")
+
+                hi = row.get("hora_inicio", "")
+
+                hf = row.get("hora_fin", "")
+
+                fecha_txt = row["fecha"].strftime("%d/%m/%Y") if pd.notna(row["fecha"]) else ""
+
+                if estado.lower() == "finalizada":
+
+                    color = "#DCFCE7"
+
+                elif estado.lower() in ["cancelada", "suspendida"]:
+
+                    color = "#FEE2E2"
+
+                elif estado.lower() == "en curso":
+
+                    color = "#DBEAFE"
+
+                else:
+
+                    color = "#FEF9C3"
+
+                st.markdown(
+
+                    f"""
+
+                    <div style="
+
+                        background:{color};
+
+                        border-radius:14px;
+
+                        padding:14px 18px;
+
+                        margin-bottom:12px;
+
+                        border:1px solid #e5e7eb;
+
+                    ">
+
+                        <b>{fecha_txt} | {hi} - {hf}</b><br>
+
+                        <span style="font-size:18px;"><b>{proc}</b></span><br>
+
+                        Paciente: {paciente}<br>
+
+                        Médico: {medico} | Anestesista: {anest}<br>
+
+                        Sala: {sala} | Estado: <b>{estado}</b>
+
+                    </div>
+
+                    """,
+
+                    unsafe_allow_html=True
+
+                )
+
+            st.markdown("### Tabla agenda")
+
+            st.dataframe(
+
+                agenda.drop(columns=["hora_inicio_dt", "hora_fin_dt"], errors="ignore"),
+
+                use_container_width=True,
+
+                hide_index=True
+
+            )
+
+    with tab_cargar:
+
+        st.subheader("Nueva cirugía")
+
+        render_form(module_name, cfg)
+
+    with tab_registros:
+
+        st.subheader("Registros cargados")
+
+        if df.empty:
+
+            st.warning("No hay registros cargados.")
+
+        else:
+
+            st.dataframe(
+
+                df.drop(columns=["hora_inicio_dt", "hora_fin_dt"], errors="ignore"),
+
+                use_container_width=True,
+
+                hide_index=True
+
+            )
 def render_module(module_name: str) -> None:
     cfg = MODULES[module_name]
+    
+
+    if cfg.get("tipo") == "quirófano":
+    
+        render_agenda_quirofano(module_name, cfg)
+    
+        return
     if module_name in ["Facturación VMR", "Facturación VM"]:
         render_facturacion_pro(module_name, cfg)
+            
         return
     table = cfg["table"]
     render_header()
