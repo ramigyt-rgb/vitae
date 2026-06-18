@@ -2278,59 +2278,60 @@ def render_agenda_quirofano(module_name: str, cfg: dict) -> None:
                     
                             )
                     
-                        with st.form(f"form_qx_{datetime.now().timestamp()}", clear_on_submit=True):
+                with st.form(f"form_qx_{datetime.now().timestamp()}", clear_on_submit=True):
 
-                            fecha = st.date_input("Fecha", key=f"qx_fecha_{datetime.now().timestamp()}")
+                        fecha = st.date_input("Fecha", key=f"qx_fecha_{datetime.now().timestamp()}")
                 
-                            hora_inicio = st.text_input("Hora inicio", key=f"qx_hi_{datetime.now().timestamp()}")
+                        hora_inicio = st.text_input("Hora inicio", key=f"qx_hi_{datetime.now().timestamp()}")
                 
-                            hora_fin = st.text_input("Hora fin", key=f"qx_hf_{datetime.now().timestamp()}")
+                        hora_fin = st.text_input("Hora fin", key=f"qx_hf_{datetime.now().timestamp()}")
                 
-                            duracion_min = st.number_input("Duración min", value=0.0, key=f"qx_dur_{datetime.now().timestamp()}")
+                        duracion_min = st.number_input("Duración min", value=0.0, key=f"qx_dur_{datetime.now().timestamp()}")
                 
-                            sala = st.selectbox("Sala", ["Quirófano 1"], key=f"qx_sala_{datetime.now().timestamp()}")
+                        sala = st.selectbox("Sala", ["Quirófano 1"], key=f"qx_sala_{datetime.now().timestamp()}")
                 
-                            paciente = st.text_input("Paciente", key=f"qx_paciente_{datetime.now().timestamp()}")
+                        paciente = st.text_input("Paciente", key=f"qx_paciente_{datetime.now().timestamp()}")
                 
-                            procedimiento = st.text_input("Procedimiento", key=f"qx_proc_{datetime.now().timestamp()}")
+                        procedimiento = st.text_input("Procedimiento", key=f"qx_proc_{datetime.now().timestamp()}")
                 
-                            medico = st.text_input("Médico", key=f"qx_medico_{datetime.now().timestamp()}")
+                        medico = st.text_input("Médico", key=f"qx_medico_{datetime.now().timestamp()}")
                 
-                            anestesista = st.text_input("Anestesista", key=f"qx_anest_{datetime.now().timestamp()}")
+                            
+                        anestesista = st.text_input("Anestesista", key=f"qx_anest_{datetime.now().timestamp()}")
                 
-                            estado = st.selectbox("Estado", ["Programada", "En curso", "Finalizada", "Suspendida", "Cancelada"], key=f"qx_estado_{datetime.now().timestamp()}")
+                        estado = st.selectbox("Estado", ["Programada", "En curso", "Finalizada", "Suspendida", "Cancelada"], key=f"qx_estado_{datetime.now().timestamp()}")
                 
-                            observaciones = st.text_area("Observaciones", key=f"qx_obs_{datetime.now().timestamp()}")
+                        observaciones = st.text_area("Observaciones", key=f"qx_obs_{datetime.now().timestamp()}")
                 
-                            submitted = st.form_submit_button("Guardar cirugía", type="primary")
+                        submitted = st.form_submit_button("Guardar cirugía", type="primary")
                 
-                            if submitted:
+                        if submitted:
                 
-                                data = {
+                            data = {
                 
-                                    "fecha": fecha,
+                                "fecha": fecha,
                 
-                                    "hora_inicio": hora_inicio,
+                                "hora_inicio": hora_inicio,
                 
-                                    "hora_fin": hora_fin,
+                                "hora_fin": hora_fin,
                 
-                                    "duracion_min": duracion_min,
+                                "duracion_min": duracion_min,
                 
-                                    "sala": sala,
+                                "sala": sala,
+                 
+                                "paciente": paciente,
                 
-                                    "paciente": paciente,
+                                "procedimiento": procedimiento,
                 
-                                    "procedimiento": procedimiento,
+                                "medico": medico,
                 
-                                    "medico": medico,
+                                "anestesista": anestesista,
                 
-                                    "anestesista": anestesista,
+                                "estado": estado,
                 
-                                    "estado": estado,
+                                "observaciones": observaciones,
                 
-                                    "observaciones": observaciones,
-                
-                                }
+                            }
                 
                                 insert_row(table, data)
                 
