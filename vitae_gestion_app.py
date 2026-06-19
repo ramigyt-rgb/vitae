@@ -1690,62 +1690,18 @@ def render_facturacion_pro(module_name: str, cfg: Dict[str, Any]) -> None:
                st.warning("Si borrás filas en la tabla y guardás, se eliminan de la base.")
             if guardar:
 
-                ids_actuales = set(edited_df["id"].dropna().astype(int).tolist())
+                original_ids = set(df["id"].dropna().astype(int).tolist())
             
-                with connect() as conn:
+                edited_ids = set(edited_df["id"].dropna().astype(int).tolist())
             
-                    ids_base = pd.read_sql_query(f"SELECT id FROM {table}", conn)["id"]
+                ids_borrados = original_ids - edited_ids
             
-                    ids_base = set(ids_base.dropna().astype(int).tolist())
+                for row_id in ids_borrados:
             
-                    ids_borrados = ids_base - ids_actuales
+                    delete_row(table, int(row_id))
             
-                    for row_id in ids_borrados:
+                st.success(f"Filas borradas: {len(ids_borrados)}")
             
-                        conn.execute(f"DELETE FROM {table} WHERE id = ?", (int(row_id),))
-            
-                    conn.commit()
-            
-                st.success(f"Filas eliminadas: {len(ids_borrados)}")
-            
-                st.rerun()
-
-
-
-    with tab_columnas:
-
-        st.subheader("Editar nombres visibles de columnas")
-
-        with st.form(f"form_labels_{table}"):
-
-            new_labels = {}
-
-            cols = st.columns(2)
-
-            for i, field in enumerate(cfg["fields"]):
-
-                name = field[0]
-
-                with cols[i % 2]:
-
-                    new_labels[name] = st.text_input(
-
-                        name,
-
-                        value=labels.get(name, name.replace("_", " ").title()),
-
-                        key=f"label_{table}_{name}",
-
-                    )
-
-            save_labels = st.form_submit_button("Guardar nombres de columnas", type="primary")
-
-            if save_labels:
-
-                set_setting(f"labels_{table}", new_labels)
-
-                st.success("Nombres de columnas actualizados.")
-
                 st.rerun()
 
     with tab_exportar:
