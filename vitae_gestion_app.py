@@ -1608,9 +1608,31 @@ def render_facturacion_pro(module_name: str, cfg: Dict[str, Any]) -> None:
     
                 try:
     
-                    insert_row(table, data)
-    
-                    st.success("Registro guardado correctamente.")
+                    df_actual = get_df(table)
+
+                    duplicado = False
+                    
+                    if not df_actual.empty:
+                    
+                        cols_check = [c for c in data.keys() if c in df_actual.columns]
+                    
+                        duplicado = (
+                    
+                            df_actual[cols_check].fillna("").astype(str)
+                    
+                            == pd.Series(data)[cols_check].fillna("").astype(str)
+                    
+                        ).all(axis=1).any()
+                    
+                    if duplicado:
+                    
+                        st.warning("Este registro ya existe. No se volvió a cargar.")
+                    
+                    else:
+                    
+                        insert_row(table, data)
+                    
+                        st.success("Registro guardado correctamente.")
     
                     st.write("DEBUG GUARDADO EN TABLA:", table)
     
