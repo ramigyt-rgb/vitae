@@ -155,7 +155,7 @@ MODULES: Dict[str, Dict[str, Any]] = {
         "tipo": "facturacion",
         "descripcion": "Control de facturación de procedimientos/pacientes de VMR según planilla quirófano.",
         "fields": [
-            ("mes", "text", True),
+            ("mes", "date", True),
             ("afiliado", "text", True),
             ("obra_social", "text", True),
             ("procedimiento", "text", True),
@@ -225,7 +225,7 @@ MODULES: Dict[str, Dict[str, Any]] = {
         "tipo": "facturacion",
         "descripcion": "Control de facturación de procedimientos/pacientes de Vitae Medical según planilla quirófano.",
         "fields": [
-            ("mes", "text", True),
+            ("mes", "date", True),
             ("afiliado", "text", True),
             ("obra_social", "text", True),
             ("procedimiento", "text", True),
