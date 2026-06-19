@@ -2427,7 +2427,25 @@ def render_agenda_quirofano(module_name: str, cfg: dict) -> None:
                                 hide_index=True
                 
                             )     
-                                                          
+                with tab_cargar:
+
+                    st.subheader("Cargar cirugía")
+                
+                    st.info("Este módulo todavía no tiene formulario de carga conectado.")
+                
+                with tab_registros:
+                
+                    st.subheader("Registros")
+                
+                    df_reg = get_df(table)
+                
+                    if df_reg.empty:
+                
+                        st.info("No hay cirugías cargadas.")
+                
+                    else:
+                
+                        st.dataframe(df_reg, use_container_width=True, hide_index=True)                                    
 def render_module(module_name: str) -> None:
         cfg = MODULES[module_name]
                     
