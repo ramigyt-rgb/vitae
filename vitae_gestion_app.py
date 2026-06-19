@@ -2612,6 +2612,45 @@ def render_admin() -> None:
     if st.button("Inicializar / reparar tablas"):
         init_db()
         st.success("Tablas verificadas correctamente.")
+    st.subheader("Limpiar filas vacías de facturación")
+
+    if st.button("Limpiar filas vacías VM y VMR", type="primary"):
+    
+        with connect() as conn:
+    
+            conn.execute("""
+    
+                DELETE FROM facturacion_vm
+    
+                WHERE COALESCE(afiliado,'') = ''
+    
+                  AND COALESCE(obra_social,'') = ''
+    
+                  AND COALESCE(procedimiento,'') = ''
+    
+                  AND COALESCE(medico_responsable,'') = ''
+    
+            """)
+    
+            conn.execute("""
+    
+                DELETE FROM facturacion_vmr
+    
+                WHERE COALESCE(afiliado,'') = ''
+    
+                  AND COALESCE(obra_social,'') = ''
+    
+                  AND COALESCE(procedimiento,'') = ''
+    
+                  AND COALESCE(medico_responsable,'') = ''
+    
+            """)
+    
+            conn.commit()
+    
+        st.success("Filas vacías eliminadas.")
+    
+        st.rerun()
 
     st.subheader("Carga de datos de ejemplo")
     if st.button("Crear ejemplos mínimos"):
