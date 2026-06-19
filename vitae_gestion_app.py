@@ -1691,17 +1691,33 @@ def render_facturacion_pro(module_name: str, cfg: Dict[str, Any]) -> None:
                st.warning("Si borrás filas en la tabla y guardás, se eliminan de la base.")
             if guardar:
 
+                ids_originales = set(df_edit["id"].dropna().astype(int).tolist())
+            
+                ids_actuales = set(edited_df["id"].dropna().astype(int).tolist())
+            
                 cambios = st.session_state.get(f"editor_{table}", {})
             
                 filas_borradas = cambios.get("deleted_rows", [])
             
+                ids_tachito = set()
+            
                 for pos in filas_borradas:
             
-                    row_id = int(df_edit.iloc[pos]["id"])
+                    if pos < len(df_edit):
             
-                    delete_row(table, row_id)
+                        ids_tachito.add(int(df_edit.iloc[pos]["id"]))
             
-                st.success(f"Filas borradas: {len(filas_borradas)}")
+                ids_borrados = (ids_originales - ids_actuales) | ids_tachito
+            
+                with connect() as conn:
+            
+                    for row_id in ids_borrados:
+            
+                        conn.execute(f"DELETE FROM {table} WHERE id = ?", (int(row_id),))
+            
+                    conn.commit()
+            
+                st.success(f"Filas borradas: {len(ids_borrados)}")
             
                 st.rerun()
 
