@@ -1690,29 +1690,15 @@ def render_facturacion_pro(module_name: str, cfg: Dict[str, Any]) -> None:
                st.warning("Si borrás filas en la tabla y guardás, se eliminan de la base.")
             if guardar:
 
-                original_ids = set(df_edit["id"].dropna().astype(int).tolist())
-            
                 edited_ids = set(edited_df["id"].dropna().astype(int).tolist())
+            
+                original_ids = set(df["id"].dropna().astype(int).tolist())
             
                 ids_borrados = original_ids - edited_ids
             
                 for row_id in ids_borrados:
             
                     delete_row(table, row_id)
-            
-                for _, row in edited_df.iterrows():
-            
-                    row_data = row.to_dict()
-            
-                    row_id = row_data.pop("id", None)
-            
-                    if pd.notna(row_id):
-            
-                        update_row(table, int(row_id), row_data)
-            
-                    else:
-            
-                        insert_row(table, row_data)
             
                 st.success("Cambios guardados correctamente.")
             
