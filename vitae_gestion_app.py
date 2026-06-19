@@ -1554,7 +1554,7 @@ def render_facturacion_pro(module_name: str, cfg: Dict[str, Any]) -> None:
 
         st.subheader("Nuevo registro")
 
-        with st.form(f"form_add_{table}", clear_on_submit=True):
+        with st.form(f"form_add_{table}", clear_on_submit=False):
 
             data: Dict[str, Any] = {}
 
@@ -1572,19 +1572,31 @@ def render_facturacion_pro(module_name: str, cfg: Dict[str, Any]) -> None:
 
             if submitted:
 
-                errors = validate_required(cfg, data)
+        errors = validate_required(cfg, data)
+    
+        if errors:
+    
+            st.error("Faltan completar campos obligatorios: " + ", ".join(errors))
+    
+            st.write("DEBUG DATA:", data)
+    
+        else:
+    
+            try:
+    
+                insert_row(table, data)
+    
+                st.success("Registro guardado correctamente.")
+    
+                st.write("DEBUG GUARDADO EN TABLA:", table)
+    
+                st.write(data)
 
-                if errors:
-
-                    st.error("Faltan completar campos obligatorios: " + ", ".join(errors))
-
-                else:
-
-                    insert_row(table, data)
-
-                    st.success("Registro guardado correctamente.")
-
-                    st.rerun()
+            except Exception as e:
+    
+                st.error("Error al guardar el registro")
+    
+                st.exception(e)
 
     with tab_importar:
 
