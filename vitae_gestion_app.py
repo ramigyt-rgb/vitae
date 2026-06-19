@@ -1690,72 +1690,32 @@ def render_facturacion_pro(module_name: str, cfg: Dict[str, Any]) -> None:
                st.warning("Si borrás filas en la tabla y guardás, se eliminan de la base.")
             if guardar:
 
-
-
-                now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-
-
-
-                rows = edited_df.to_dict("records")
-
-
-
-                with connect() as conn:
-
-
-
-                    conn.execute(f"DELETE FROM {table}")
-
-
-
-                    for row in rows:
-
-
-
-                        row.pop("id", None)
-
-
-
-                        row["created_at"] = now
-
-
-
-                        row["updated_at"] = now
-
-
-
-                        cols = list(row.keys())
-
-
-
-                        placeholders = ", ".join(["?"] * len(cols))
-
-
-
-                        conn.execute(
-
-
-
-                            f"INSERT INTO {table} ({', '.join(cols)}) VALUES ({placeholders})",
-
-
-
-                            [row[c] for c in cols]
-
-
-
-                        )
-
-
-
-                    conn.commit()
-
-
-
-                st.success("Tabla actualizada correctamente.")
-
-
-
+                original_ids = set(df_edit["id"].dropna().astype(int).tolist())
+            
+                edited_ids = set(edited_df["id"].dropna().astype(int).tolist())
+            
+                ids_borrados = original_ids - edited_ids
+            
+                for row_id in ids_borrados:
+            
+                    delete_row(table, row_id)
+            
+                for _, row in edited_df.iterrows():
+            
+                    row_data = row.to_dict()
+            
+                    row_id = row_data.pop("id", None)
+            
+                    if pd.notna(row_id):
+            
+                        update_row(table, int(row_id), row_data)
+            
+                    else:
+            
+                        insert_row(table, row_data)
+            
+                st.success("Cambios guardados correctamente.")
+            
                 st.rerun()
 
 
