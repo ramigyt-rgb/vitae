@@ -553,7 +553,7 @@ def replace_table_rows(table: str, rows: List[Dict[str, Any]]) -> int:
         
             rows_limpias.append(row)
 
-return bulk_insert_rows(table, rows_limpias)
+    return bulk_insert_rows(table, rows_limpias)
 
 def update_row(table: str, row_id: int, data: Dict[str, Any]) -> None:
     data = {**data, "updated_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S")}
