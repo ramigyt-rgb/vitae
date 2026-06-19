@@ -530,27 +530,31 @@ def bulk_insert_rows(table: str, rows: List[Dict[str, Any]]) -> int:
     return len(clean_rows)
 
 def replace_table_rows(table: str, rows: List[Dict[str, Any]]) -> int:
+
     with connect() as conn:
+
         conn.execute(f"DELETE FROM {table}")
+
         conn.commit()
+
     rows_limpias = []
-        
+
     for row in rows:
-        
+
         row = {k: v for k, v in row.items() if k != "id"}
-        
+
         tiene_datos = any(
-        
+
             str(v).strip() not in ["", "0", "0.0", "None", "nan", "NaT"]
-        
+
             for k, v in row.items()
-        
+
             if k not in ["created_at", "updated_at"]
-        
+
         )
-        
+
         if tiene_datos:
-        
+
             rows_limpias.append(row)
 
     return bulk_insert_rows(table, rows_limpias)
