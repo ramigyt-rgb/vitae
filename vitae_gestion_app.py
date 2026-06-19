@@ -1580,23 +1580,23 @@ def render_facturacion_pro(module_name: str, cfg: Dict[str, Any]) -> None:
             
                     st.write("DEBUG DATA:", data)
     
-        else:
+            else:
     
-            try:
+                try:
     
-                insert_row(table, data)
+                    insert_row(table, data)
     
-                st.success("Registro guardado correctamente.")
+                    st.success("Registro guardado correctamente.")
     
-                st.write("DEBUG GUARDADO EN TABLA:", table)
+                    st.write("DEBUG GUARDADO EN TABLA:", table)
     
-                st.write(data)
+                    st.write(data)
 
-            except Exception as e:
+                except Exception as e:
     
-                st.error("Error al guardar el registro")
+                    st.error("Error al guardar el registro")
     
-                st.exception(e)
+                    st.exception(e)
 
     with tab_importar:
 
