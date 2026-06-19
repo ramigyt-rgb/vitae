@@ -1572,13 +1572,13 @@ def render_facturacion_pro(module_name: str, cfg: Dict[str, Any]) -> None:
 
             if submitted:
 
-        errors = validate_required(cfg, data)
-    
-        if errors:
-    
-            st.error("Faltan completar campos obligatorios: " + ", ".join(errors))
-    
-            st.write("DEBUG DATA:", data)
+                errors = validate_required(cfg, data)
+            
+                if errors:
+            
+                    st.error("Faltan completar campos obligatorios: " + ", ".join(errors))
+            
+                    st.write("DEBUG DATA:", data)
     
         else:
     
