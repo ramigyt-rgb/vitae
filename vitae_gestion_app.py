@@ -599,10 +599,24 @@ def bulk_insert_rows(table: str, rows: List[Dict[str, Any]]) -> int:
     return len(clean_rows)
 
 def replace_table_rows(table: str, rows: List[Dict[str, Any]]) -> int:
+
     with connect() as conn:
+
         conn.execute(f"DELETE FROM {table}")
+
         conn.commit()
+
+    result = bulk_insert_rows(table, rows)
+
+    try:
+
         sync_table_to_sheet(table)
+
+    except Exception as e:
+
+        st.warning(f"No se pudo sincronizar Google Sheets: {e}")
+
+    return result
     
     return bulk_insert_rows(table, rows)
 
