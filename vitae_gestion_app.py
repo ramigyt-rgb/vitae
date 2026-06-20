@@ -506,7 +506,7 @@ def get_df(table: str) -> pd.DataFrame:
         try:
             return pd.read_sql_query(f"SELECT * FROM {table} ORDER BY id DESC", conn)
         except Exception:
-            return pd.DataFrame(
+            return pd.DataFrame()
                 
 def get_gs_client():
 
