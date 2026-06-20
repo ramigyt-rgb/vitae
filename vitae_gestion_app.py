@@ -506,62 +506,62 @@ def get_df(table: str) -> pd.DataFrame:
         try:
             return pd.read_sql_query(f"SELECT * FROM {table} ORDER BY id DESC", conn)
         except Exception:
-            return pd.DataFrame()
-            def get_gs_client():
+            return pd.DataFrame(
+                
+def get_gs_client():
 
-                scopes = [
+    scopes = [
 
-                    "https://www.googleapis.com/auth/spreadsheets",
+        "https://www.googleapis.com/auth/spreadsheets",
 
-                    "https://www.googleapis.com/auth/drive",
+        "https://www.googleapis.com/auth/drive",
 
-                ]
+    ]
 
-                service_account_info = json.loads(st.secrets["GOOGLE_SERVICE_ACCOUNT_JSON"])
+        service_account_info = json.loads(st.secrets["GOOGLE_SERVICE_ACCOUNT_JSON"])
 
-                credentials = Credentials.from_service_account_info(
+        credentials = Credentials.from_service_account_info(
 
-                    service_account_info,
+        service_account_info,
 
-                    scopes=scopes
+        scopes=scopes
 
-                )
+    )
 
-                return gspread.authorize(credentials)
+        return gspread.authorize(credentials)
+def sync_table_to_sheet(table: str):
 
-            def sync_table_to_sheet(table: str):
+    if not SHEET_ID:
 
-                if not SHEET_ID:
+        return
 
-                    return
+        df = get_df(table)
 
-                df = get_df(table)
+        gc = get_gs_client()
 
-                gc = get_gs_client()
+        sh = gc.open_by_key(SHEET_ID)
 
-                sh = gc.open_by_key(SHEET_ID)
+        try:
 
-                try:
+            ws = sh.worksheet(table)
 
-                    ws = sh.worksheet(table)
+            except gspread.WorksheetNotFound:
 
-                except gspread.WorksheetNotFound:
+            ws = sh.add_worksheet(title=table, rows=1000, cols=30)
 
-                    ws = sh.add_worksheet(title=table, rows=1000, cols=30)
+        ws.clear()
 
-                ws.clear()
+        if df.empty:
 
-                if df.empty:
+           ws.update([["Sin datos"]])
 
-                    ws.update([["Sin datos"]])
+                return
 
-                    return
+            df = df.astype(str)
 
-                df = df.astype(str)
+            data = [df.columns.tolist()] + df.values.tolist()
 
-                data = [df.columns.tolist()] + df.values.tolist()
-
-                ws.update(data)
+            ws.update(data)
 
             def sync_all_to_sheets():
 
