@@ -1923,6 +1923,34 @@ def render_dashboard() -> None:
     st.divider()
     render_resumen_empresa("Resumen VMR", "VMR")
     render_resumen_empresa("Resumen VM", "VM")
+    rows_global = []
+            for name, cfg in MODULES.items():
+                df_g = get_df(cfg["table"])
+                if df_g.empty:
+                    continue
+                if "valor_pesos" in df_g.columns:
+                    total_g = df_g["valor_pesos"].apply(money).sum()
+                elif "importe" in df_g.columns:
+                    total_g = df_g["importe"].apply(money).sum()
+                else:
+                    total_g = 0
+                if total_g > 0:
+                    rows_global.append({
+                        "Módulo": name,
+                        "Empresa": cfg["empresa"],
+                        "Total": total_g,
+                    })
+            resumen_global = pd.DataFrame(rows_global)
+            if not resumen_global.empty:
+                fig = px.bar(
+                    resumen_global,
+                    x="Módulo",
+                    y="Total",
+                    color="Empresa",
+                    title="Importes registrados por módulo"
+                )
+                fig.update_layout(xaxis_tickangle=-35)
+                st.plotly_chart(fig, use_container_width=True, key="grafico_modulos_unico")
 
 def render_resumen_empresa(titulo, empresa):
         mods = {
@@ -1996,36 +2024,7 @@ def render_resumen_empresa(titulo, empresa):
                 "Total": total,
                 "Registros": len(df),
             })
-        resumen = pd.DataFrame(rows)
-        if titulo == "Resumen VMR":
-            rows_global = []
-            for name, cfg in MODULES.items():
-                df_g = get_df(cfg["table"])
-                if df_g.empty:
-                    continue
-                if "valor_pesos" in df_g.columns:
-                    total_g = df_g["valor_pesos"].apply(money).sum()
-                elif "importe" in df_g.columns:
-                    total_g = df_g["importe"].apply(money).sum()
-                else:
-                    total_g = 0
-                if total_g > 0:
-                    rows_global.append({
-                        "Módulo": name,
-                        "Empresa": cfg["empresa"],
-                        "Total": total_g,
-                    })
-            resumen_global = pd.DataFrame(rows_global)
-            if not resumen_global.empty:
-                fig = px.bar(
-                    resumen_global,
-                    x="Módulo",
-                    y="Total",
-                    color="Empresa",
-                    title="Importes registrados por módulo"
-                )
-                fig.update_layout(xaxis_tickangle=-35)
-                st.plotly_chart(fig, use_container_width=True, key="grafico_modulos_unico")
+        resumen = pd.DataFrame(rows)           
         st.divider()                                
 def render_configuracion() -> None:
 
