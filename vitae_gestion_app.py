@@ -1503,21 +1503,19 @@ def render_facturacion_pro(module_name: str, cfg: Dict[str, Any]) -> None:
             st.warning("No hay registros cargados.")
         else:
             filtered = apply_filters(df, module_name)
+            cols_monto = [c for c in ["valor_pesos", "importe", "monto"] if c in filtered.columns]
             total_facturado = 0
-
-            if "valor_pesos" in filtered.columns:
-                total_facturado += filtered["valor_pesos"].apply(money).sum()
-            if "importe" in filtered.columns:
-                total_facturado += filtered["importe"].apply(money).sum()
-            col_monto = "valor_pesos" if "valor_pesos" in filtered.columns else "importe" 
-
+            for c in cols_monto:
+                total_facturado += filtered[c].apply(money).sum()
             if "estado" in filtered.columns:
-                total_cobrado = filtered[filtered["estado"].astype(str).str.lower().isin(["completo", "pagado", "cobrado"])]
-                cobrado = total_cobrado[col_monto].apply(money).sum() if col_monto else 0
+                mask_cobrado = filtered["estado"].astype(str).str.lower().isin(
+                    ["cobrado", "pagado", "completo", "realizado", "finalizado", "finalizada"]
+            )
+            cobrado = 0
+            for c in cols_monto:
+                cobrado += filtered.loc[mask_cobrado, c].apply(money).sum()
             else:
-                total_cobrado = 0
                 cobrado = 0
-            
             pendiente = total_facturado - cobrado
             pacientes = len(filtered)
             ticket_promedio = total_facturado / pacientes if pacientes > 0 else 0
