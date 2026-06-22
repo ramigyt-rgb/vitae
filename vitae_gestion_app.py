@@ -2273,6 +2273,7 @@ def seed_examples() -> None:
 # =========================================================
 def main() -> None:
     init_db()
+    restore_all_from_sheets()
     st.sidebar.title("VITAE")
     st.sidebar.caption("Sistema interno de gestión")
     page = st.sidebar.radio("Navegación", ["Dashboard Global", "Módulos", "Administración", "Configuración"])
