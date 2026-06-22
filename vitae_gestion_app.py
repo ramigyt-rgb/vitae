@@ -1584,18 +1584,18 @@ def render_facturacion_pro(module_name: str, cfg: Dict[str, Any]) -> None:
                 "observaciones",
             ]
             visible_cols = [c for c in columnas_a_mostrar if c in filtered.columns]
-              if visible_cols:
-                  st.dataframe(
-                      filtered[visible_cols],
-                      use_container_width=True,
-                      hide_index=True
-                  )
-                  else:
-                      st.dataframe(
-                          filtered,
-                          use_container_width=True,
-                          hide_index=True
-                      )
+            if visible_cols:
+                st.dataframe(
+                    filtered[visible_cols],
+                    use_container_width=True,
+                    hide_index=True
+                )
+                else:
+                    st.dataframe(
+                        filtered,
+                        use_container_width=True,
+                        hide_index=True
+                    )
     st.divider()
     st.markdown("### Gráficos útiles")
     g1, g2 = st.columns(2)
