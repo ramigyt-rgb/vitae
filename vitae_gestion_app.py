@@ -1590,12 +1590,12 @@ def render_facturacion_pro(module_name: str, cfg: Dict[str, Any]) -> None:
                     use_container_width=True,
                     hide_index=True
                 )
-                else:
-                    st.dataframe(
-                        filtered,
-                        use_container_width=True,
-                        hide_index=True
-                    )
+            else:
+                st.dataframe(
+                    filtered,
+                    use_container_width=True,
+                    hide_index=True
+                )
     st.divider()
     st.markdown("### Gráficos útiles")
     g1, g2 = st.columns(2)
