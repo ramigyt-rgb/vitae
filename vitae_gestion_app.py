@@ -537,23 +537,47 @@ def restore_table_from_sheet(table: str):
     if not SHEET_ID:
         return
     gc = get_gs_client()
-    sh = gc.open_by_key(SHEET_ID)
-    
+    sh = gc.open_by_key(SHEET_ID)    
     try:
         ws = sh.worksheet(table)
     except gspread.WorksheetNotFound:
-        return
-    
-    values = ws.get_all_records()
-    if not values:
-        return
-    if len(values) == 1 and list(values[0].values())[0] == "Sin datos":
-        return
-    df = pd.DataFrame(values)
-    if df.empty:
-        return
-    with connect() as conn:
-        df.to_sql(table, conn, if_exists="replace", index=False)
+        return    
+        raw = ws.get_all_values()
+        if not raw or len(raw) < 2:
+            return
+        headers = [str(h).strip() for h in raw[0]]
+    # evitar columnas vacías o duplicadas
+        clean_headers = []
+        used = set()
+        for i, h in enumerate(headers):
+            if not h:
+                h = f"col_{i+1}"
+            if h in used:
+                h = f"{h}_{i+1}"
+                used.add(h)
+         clean_headers.append(h)
+         for i, h in enumerate(headers):
+             if not h:
+                h = f"col_{i+1}"
+         if h in used:
+                h = f"{h}_{i+1}"
+                used.add(h)
+                clean_headers.append(h)
+         values = [
+             dict(zip(clean_headers, row))
+             for row in raw[1:]
+             if any(str(cell).strip() for cell in row)
+         ]
+         if not values:
+             return    
+        
+        if len(values) == 1 and list(values[0].values())[0] == "Sin datos":
+            return
+        df = pd.DataFrame(values)
+        if df.empty:
+            return
+        with connect() as conn:
+            df.to_sql(table, conn, if_exists="replace", index=False)
 def restore_all_from_sheets():
     for cfg in MODULES.values():
         restore_table_from_sheet(cfg["table"])
