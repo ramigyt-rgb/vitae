@@ -1572,13 +1572,14 @@ def render_facturacion_pro(module_name: str, cfg: Dict[str, Any]) -> None:
             st.markdown("### Tabla limpia")        
             columnas_a_mostrar = [
                 "mes",
-                "paciente_afiliado",
+                "afiliado",
                 "obra_social",
                 "procedimiento",
-                "medico",
+                "medico_responsable",
+                "valor_pesos",
+                "valor_usd",
                 "fecha_factura",
-                "n_factura",
-                "importe",
+                "numero_factura",
                 "pagado",
                 "estado",
                 "observaciones",
