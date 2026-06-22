@@ -495,25 +495,15 @@ def get_df(table: str) -> pd.DataFrame:
         except Exception:
             return pd.DataFrame()               
 def get_gs_client():
-
     scopes = [
-
         "https://www.googleapis.com/auth/spreadsheets",
-
         "https://www.googleapis.com/auth/drive",
-
     ]
-
     service_account_info = dict(st.secrets["gcp_service_account"])
-
     credentials = Credentials.from_service_account_info(
-
         service_account_info,
-
         scopes=scopes
-
     )
-
     return gspread.authorize(credentials)
 def sync_table_to_sheet(table: str):
     if not SHEET_ID:
@@ -546,7 +536,7 @@ def sync_all_to_sheets():
 def restore_table_from_sheet(table: str):
     if not SHEET_ID:
         return
-    gc = get_gs_Client()
+    gc = get_gs_client()
     sh = gc.open_by_key(SHEET_ID)
     
     try:
