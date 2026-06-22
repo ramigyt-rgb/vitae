@@ -554,19 +554,13 @@ def restore_table_from_sheet(table: str):
                 h = f"col_{i+1}"
             if h in used:
                 h = f"{h}_{i+1}"
-                used.add(h)
-         clean_headers.append(h)
-         for i, h in enumerate(headers):
-             if not h:
-                h = f"col_{i+1}"
-         if h in used:
-                h = f"{h}_{i+1}"
-                used.add(h)
-                clean_headers.append(h)
+            used.add(h)
+            clean_headers.append(h)
+         
          values = [
-             dict(zip(clean_headers, row))
-             for row in raw[1:]
-             if any(str(cell).strip() for cell in row)
+            dict(zip(clean_headers, row))
+            for row in raw[1:]
+            if any(str(cell).strip() for cell in row)
          ]
          if not values:
              return    
