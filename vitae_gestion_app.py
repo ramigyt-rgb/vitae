@@ -1585,6 +1585,14 @@ def render_facturacion_pro(module_name: str, cfg: Dict[str, Any]) -> None:
                 "observaciones",
             ]
             visible_cols = [c for c in columnas_a_mostrar if c in filtered.columns]
+            if "mes" in filtered.columns:
+                filtered = filtered.sort_values("mes", ascending=False)
+            for col_fecha in ["mes", "fecha", "fecha_factura", "vencimiento", "fecha_pago"]:
+                if col_fecha in filtered.columns:
+                    filtered[col_fecha] = pd.to_datetime(
+                        filtered[col_fecha],
+                        errors="coerce"
+                    ).dt.strftime("%d/%m/%Y")  
             if visible_cols:
                 st.dataframe(
                     filtered[visible_cols],
