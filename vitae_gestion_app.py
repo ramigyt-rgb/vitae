@@ -1556,45 +1556,23 @@ def render_facturacion_pro(module_name: str, cfg: Dict[str, Any]) -> None:
                 na_position="last"
             )
         if not filtered.empty:
-            st.markdown("### Tabla limpia")        
-            columnas_a_mostrar = [
-                "mes",
-                "afiliado",
-                "obra_social",
-                "procedimiento",
-                "medico_responsable",
-                "valor_pesos",
-                "valor_usd",
-                "fecha_factura",
-                "numero_factura",
-                "pagado",
-                "estado",
-                "observaciones",
-            ]
-            visible_cols = [c for c in columnas_a_mostrar if c in filtered.columns]
+            st.markdown("### Tabla limpia")
             display_df = filtered.copy()
-            if "mes" in display_df.columns:
-                display_df["_fecha_orden"] = pd.to_datetime(display_df["mes"], errors="coerce")
-                display_df = display_df.sort_values("_fecha_orden", ascending=False)
-                display_df = display_df.drop(columns=["_fecha_orden"])
-            for col_fecha in ["mes", "fecha", "fecha_factura", "vencimiento", "fecha_pago"]:
-                if col_fecha in display_df.columns:
-                    display_df[col_fecha] = pd.to_datetime(
-                        display_df[col_fecha],
-                        errors="coerce"
-                    ).dt.strftime("%d/%m/%Y")
-            if visible_cols:
-                st.dataframe(
-                    display_df[visible_cols],
-                    use_container_width=True,
-                    hide_index=True
-                )
-            else:
-                st.dataframe(
-                    display_df,
-                    use_container_width=True,
-                    hide_index=True
-                )
+        if "mes" in display_df.columns:
+            display_df["_fecha_orden"] = pd.to_datetime(display_df["mes"], errors="coerce")
+            display_df = display_df.sort_values("_fecha_orden", ascending=False)
+            display_df = display_df.drop(columns=["_fecha_orden"])
+        for col_fecha in ["mes", "fecha", "fecha_factura", "vencimiento", "fecha_pago"]:
+            if col_fecha in display_df.columns:
+                display_df[col_fecha] = pd.to_datetime(
+                    display_df[col_fecha],
+                    errors="coerce"
+                ).dt.strftime("%d/%m/%Y")
+        st.dataframe(
+            display_df,
+            use_container_width=True,
+            hide_index=True
+)
     st.divider()
     st.markdown("### Gráficos útiles")
     g1, g2 = st.columns(2)
