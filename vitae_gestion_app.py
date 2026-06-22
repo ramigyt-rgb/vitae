@@ -562,7 +562,7 @@ def restore_table_from_sheet(table: str):
             for row in raw[1:]
             if any(str(cell).strip() for cell in row)
          ]
-         if not values:
+        if not values:
              return    
         
         if len(values) == 1 and list(values[0].values())[0] == "Sin datos":
