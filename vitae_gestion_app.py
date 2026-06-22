@@ -1503,13 +1503,13 @@ def render_facturacion_pro(module_name: str, cfg: Dict[str, Any]) -> None:
             st.warning("No hay registros cargados.")
         else:
             filtered = apply_filters(df, module_name)
-            col_monto = None
-            for c in ["valor_pesos", "importe", "monto", "saldo", "valor"]:
-                if c in filtered.columns:
-                    col_monto = c
-                    break
+            total_facturado = 0
 
-            total_facturado = filtered[col_monto].apply(money).sum() if col_monto else 0 
+            if "valor_pesos" in filtered.columns:
+                total_facturado += filtered["valor_pesos"].apply(money).sum()
+            if "importe" in filtered.columns:
+                total_facturado += filtered["importe"].apply(money).sum()
+            col_monto = "valor_pesos" if "valor_pesos" in filtered.columns else "importe" 
 
             if "estado" in filtered.columns:
                 total_cobrado = filtered[filtered["estado"].astype(str).str.lower().isin(["completo", "pagado", "cobrado"])]
