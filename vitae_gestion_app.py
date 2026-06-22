@@ -1543,31 +1543,18 @@ def render_facturacion_pro(module_name: str, cfg: Dict[str, Any]) -> None:
                 ascending=False,
                 na_position="last"
             )
-
         col_orden = "mes" if "mes" in filtered.columns else "Mes" if "Mes" in filtered.columns else None
-
         if col_orden:
-
             filtered[col_orden] = pd.to_datetime(
-
                 filtered[col_orden],
-
                 errors="coerce",
-
                 dayfirst=True
-
             )
-
             filtered = filtered.sort_values(
-
                 by=col_orden,
-
                 ascending=False,
-
                 na_position="last"
-
             )
-
         if not filtered.empty:
             st.markdown("### Tabla limpia")        
             columnas_a_mostrar = [
@@ -1585,25 +1572,26 @@ def render_facturacion_pro(module_name: str, cfg: Dict[str, Any]) -> None:
                 "observaciones",
             ]
             visible_cols = [c for c in columnas_a_mostrar if c in filtered.columns]
-            if "mes" in filtered.columns:
-                filtered["_fecha_orden"] = pd.to_datetime(filtered["mes"], errors="coerce")
-                filtered = filtered.sort_values("_fecha_orden", ascending=False)
-                filtered = filtered.drop(columns=["_fecha_orden"])
+            display_df = filtered.copy()
+            if "mes" in display_df.columns:
+                display_df["_fecha_orden"] = pd.to_datetime(display_df["mes"], errors="coerce")
+                display_df = display_df.sort_values("_fecha_orden", ascending=False)
+                display_df = display_df.drop(columns=["_fecha_orden"])
             for col_fecha in ["mes", "fecha", "fecha_factura", "vencimiento", "fecha_pago"]:
-                if col_fecha in filtered.columns:
-                    filtered[col_fecha] = pd.to_datetime(
-                        filtered[col_fecha],
+                if col_fecha in display_df.columns:
+                    display_df[col_fecha] = pd.to_datetime(
+                        display_df[col_fecha],
                         errors="coerce"
-                    ).dt.strftime("%d/%m/%Y")  
+                    ).dt.strftime("%d/%m/%Y")
             if visible_cols:
                 st.dataframe(
-                    filtered[visible_cols],
+                    display_df[visible_cols],
                     use_container_width=True,
                     hide_index=True
                 )
             else:
                 st.dataframe(
-                    filtered,
+                    display_df,
                     use_container_width=True,
                     hide_index=True
                 )
