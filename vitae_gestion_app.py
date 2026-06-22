@@ -544,7 +544,7 @@ def sync_all_to_sheets():
         table = cfg["table"]
         sync_table_to_sheet(table)
 def restore_table_from_sheet(table: str):
-    if not SHEED_ID:
+    if not SHEET_ID:
         return
     gc = get_gs_Client()
     sh = gc.open_by_key(SHEET_ID)
