@@ -557,7 +557,7 @@ def restore_table_from_sheet(table: str):
             used.add(h)
             clean_headers.append(h)
          
-         values = [
+        values = [
             dict(zip(clean_headers, row))
             for row in raw[1:]
             if any(str(cell).strip() for cell in row)
