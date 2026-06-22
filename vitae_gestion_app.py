@@ -1569,12 +1569,33 @@ def render_facturacion_pro(module_name: str, cfg: Dict[str, Any]) -> None:
             )
 
         if not filtered.empty:
-            st.markdown("### Tabla limpia")
-            st.dataframe(
-                format_facturacion_table(filtered, labels),
-                use_container_width=True,
-                hide_index=True,
-            )
+            st.markdown("### Tabla limpia")        
+            columnas_a_mostrar = [
+                "mes",
+                "paciente_afiliado",
+                "obra_social",
+                "procedimiento",
+                "medico",
+                "fecha_factura",
+                "n_factura",
+                "importe",
+                "pagado",
+                "estado",
+                "observaciones",
+            ]
+            visible_cols = [c for c in columnas_a_mostrar if c in filtered.columns]
+              if visible_cols:
+                  st.dataframe(
+                      filtered[visible_cols],
+                      use_container_width=True,
+                      hide_index=True
+                  )
+                  else:
+                      st.dataframe(
+                          filtered,
+                          use_container_width=True,
+                          hide_index=True
+                      )
     st.divider()
     st.markdown("### Gráficos útiles")
     g1, g2 = st.columns(2)
