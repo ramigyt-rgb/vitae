@@ -547,7 +547,7 @@ def restore_table_from_sheet(table: str):
     values = ws.get_all_records()
     if not values:
         return
-    if len(values) == 1 and list(values())[0] == "Sin datos":
+    if len(values) == 1 and list(values[0].values())[0] == "Sin datos":
         return
     df = pd.DataFrame(values)
     if df.empty:
