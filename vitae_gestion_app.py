@@ -644,7 +644,13 @@ def restore_all_from_sheets() -> Dict[str, int]:
     return result
 def insert_row(table: str, data: Dict[str, Any]) -> None:
     now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    data = {**data, "created_at": now, "updated_at": now}
+    with connect() as conn:
+        cols = [r[1] for r in conn.execute(f"PRAGMA table_info({table})").fetchall()]
+    data = data.copy()
+    if "created_at" in cols:
+        data["created_at"] = now
+    if "updated_at" in cols:
+        data["updated_at"] = now
     cols = list(data.keys())
     placeholders = ", ".join(["?"] * len(cols))
     sql = f"INSERT INTO {table} ({', '.join(cols)}) VALUES ({placeholders})"
