@@ -2409,30 +2409,30 @@ def render_facturacion_pro(module_name: str, cfg: Dict[str, Any]) -> None:
                     data[field[0]] = clean_for_db(raw, field[1])
             submitted = st.form_submit_button("Guardar registro", type="primary")
             if submitted:
-                errors = validate_required(cfg, data)
-                if errors:
-                    st.error("Faltan completar campos obligatorios: " + ", ".join(errors))
-                    st.write("DEBUG DATA:", data)
-            else:
-                try:
-                    df_actual = get_df(table)
-                    duplicado = False
-                    if not df_actual.empty:
-                        cols_check = [c for c in data.keys() if c in df_actual.columns]
-                        duplicado = (
-                            df_actual[cols_check].fillna("").astype(str)
-                            == pd.Series(data)[cols_check].fillna("").astype(str)
-                        ).all(axis=1).any()
-                    if duplicado:
-                        st.warning("Este registro ya existe. No se volvió a cargar.")
-                    else:
-                        insert_row(table, data)
-                        st.success("Registro guardado correctamente.")
-                    st.write("DEBUG GUARDADO EN TABLA:", table)
-                    st.write(data)
-                except Exception as e:
-                    st.error("Error al guardar el registro")
-                    st.exception(e)
+                errors = validate_required(cfg, data)            
+                if errors:            
+                    st.error("Faltan completar campos obligatorios: " + ", ".join(errors))            
+                    st.write("DEBUG DATA:", data)            
+                else:            
+                    try:            
+                        df_actual = get_df(table)      
+                        duplicado = False     
+                        if not df_actual.empty:
+                            cols_check = [c for c in data.keys() if c in df_actual.columns]    
+                            duplicado = (      
+                                df_actual[cols_check].fillna("").astype(str)    
+                                == pd.Series(data)[cols_check].fillna("").astype(str)      
+                            ).all(axis=1).any()         
+                        if duplicado:      
+                            st.warning("Este registro ya existe. No se volvió a cargar.")        
+                        else:       
+                            insert_row(table, data)          
+                            st.success("Registro guardado correctamente.")         
+                        st.write("DEBUG GUARDADO EN TABLA:", table)            
+                        st.write(data)            
+                    except Exception as e:
+                        st.error("Error al guardar el registro")
+                        st.exception(e)
     with tab_importar:
         render_importer(module_name, cfg)    
     with tab_editar:
