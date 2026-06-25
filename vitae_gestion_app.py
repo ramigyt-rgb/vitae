@@ -1613,17 +1613,23 @@ def render_importer(module_name: str, cfg: Dict[str, Any]) -> None:
             count = replace_table_rows(table, rows)
         else:
             df_existente = get_df(table)
-            df_nuevo= pd.DataFrame(rows)
-            clave = ["afiliado", "procedimiento", "medico_responsable", "fecha"]
-            cols_clave = [c for c in clave if c in df_existente.columns and c in df_nuevo.columns]
-            if cols_clave:
-                df_existente["_clave"] = df_existente[cols_clave].fillna("").astype(str).agg("|".join, axis=1)
-                df_nuevo["_clave"] = df_nuevo[cols_clave].fillna("").astype(str).agg("|".join, axis=1)
-                df_para_agregar = df_nuevo[~df_nuevo["_clave"].isin(df_existente["_clave"])].copy()
-                df_para_agregar = df_para_agregar.drop(columns=["_clave"], errors="ignore")
-            else:
-                df_para_agregar = df_nuevo
+            df_nuevo = pd.DataFrame(rows)            
+            clave = ["mes", "afiliado", "obra_social", "procedimiento", "medico_responsable"]            
+            if not df_existente.empty:            
+                cols_clave = [c for c in clave if c in df_existente.columns and c in df_nuevo.columns]            
+                if cols_clave:           
+                    df_existente["_clave"] = df_existente[cols_clave].fillna("").astype(str).agg("|".join, axis=1)            
+                    df_nuevo["_clave"] = df_nuevo[cols_clave].fillna("").astype(str).agg("|".join, axis=1)           
+                    df_para_agregar = df_nuevo[            
+                        ~df_nuevo["_clave"].isin(df_existente["_clave"])            
+                    ].copy()           
+                    df_para_agregar = df_para_agregar.drop(columns=["_clave"], errors="ignore")          
+                else:            
+                    df_para_agregar = df_nuevo.copy()            
+            else:            
+                df_para_agregar = df_nuevo.copy()            
             rows_para_agregar = df_para_agregar.to_dict("records")
+            
             count = bulk_insert_rows(table, rows_para_agregar)
             st.info(f"Registros existentes: {len(df_existente)}")
             st.info(f"Registros del archivo: {len(df_nuevo)}")
