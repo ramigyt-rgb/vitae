@@ -700,7 +700,7 @@ def save_table_changes(table: str, edited_df: pd.DataFrame, allow_delete: bool =
     - No borra toda la tabla.
     - Actualiza filas existentes por id.
     - Inserta filas nuevas.
-    - Opcionalmente borra filas eliminadas solo si allow_delete=True.
+    - Opcionalmente borra filas eliminadas solo si allow_delete=False.
     """
     if edited_df is None or edited_df.empty:
         return 0
