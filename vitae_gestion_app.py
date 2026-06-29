@@ -1685,26 +1685,13 @@ def render_header() -> None:
         else:
             st.warning("Logo no encontrado")
 def get_setting(key: str, default: Any = None) -> Any:
-    with connect() as conn:
-        row = conn.execute("SELECT value FROM app_settings WHERE key = ?", (key,)).fetchone()
-    if row is None:
         return default
     try:
         return json.loads(row["value"])
     except Exception:
         return row["value"]
 def set_setting(key: str, value: Any) -> None:
-    now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    payload = json.dumps(value, ensure_ascii=False)
-    with connect() as conn:
-        conn.execute(
-            """
-            INSERT INTO app_settings (key, value, updated_at)
-            VALUES (?, ?, ?)
-            ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = excluded.updated_at
-            """,
-            (key, payload, now),
-        )
+    return None
         conn.commit()
 DEFAULT_FACT_LABELS = {
     "mes": "Mes",
