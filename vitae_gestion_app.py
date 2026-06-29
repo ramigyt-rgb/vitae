@@ -1689,7 +1689,7 @@ def get_setting(key: str, default: Any = None) -> Any:
   
 def set_setting(key: str, value: Any) -> None:
     return None
-        conn.commit()
+
 DEFAULT_FACT_LABELS = {
     "mes": "Mes",
     "afiliado": "Paciente / Afiliado",
